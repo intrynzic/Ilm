@@ -1,6 +1,7 @@
 workspace "Tests"
     architecture "x86_64"
     cppdialect (CPP_VER)
+    multiprocessorcompile "On"
 
     configurations
     {
@@ -11,11 +12,6 @@ workspace "Tests"
     solutionitems
     {
         "../.editorconfig"
-    }
-
-    flags
-    {
-        "MultiProcessorCompile"
     }
 
     defines
@@ -68,18 +64,14 @@ workspace "Tests"
         runtime "Release"
         symbols "Off"
         optimize "Full"
-        linktimeoptimization "on"
+        linktimeoptimization "On"
+        buffersecuritycheck "Off"
+        runtimechecks "Off"
+        incrementallink "Off"
 
         defines
         {
             "NDEBUG"
-        }
-
-        flags
-        {
-            "NoBufferSecurityCheck",
-            "NoRuntimeChecks",
-            "NoIncrementalLink"
         }
 
 include "Test-RefMemoryLeak"

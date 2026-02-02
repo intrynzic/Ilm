@@ -1,4 +1,4 @@
-include "Vendor/premake/customization/solutionitems.lua"
+include "Tools/Premake/customization/solutionitems.lua"
 
 local function pickCppVersion(targetVersion)
     if os.target() == "windows" then

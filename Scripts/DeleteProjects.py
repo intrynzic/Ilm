@@ -1,12 +1,13 @@
 import os
 
+
 def DeleteFile(path: str):
     if os.path.isfile(path):
         os.remove(path)
         print(f"Deleted: {path}")
 
 def DeleteExamples():
-    DeleteFile("Examples/Examples.sln")
+    DeleteFile("Examples/Examples.slnx")
 
     DeleteFile("Examples/Example-Ref/Example-Ref.vcxproj")
     DeleteFile("Examples/Example-Ref/Example-Ref.vcxproj.filters")
@@ -21,7 +22,7 @@ def DeleteExamples():
     DeleteFile("Examples/Example-WeakRef/Example-WeakRef.vcxproj.user")
 
 def DeleteTests():
-    DeleteFile("Tests/Tests.sln")
+    DeleteFile("Tests/Tests.slnx")
 
     DeleteFile("Tests/Test-RefMemoryLeak/Test-RefMemoryLeak.vcxproj")
     DeleteFile("Tests/Test-RefMemoryLeak/Test-RefMemoryLeak.vcxproj.filters")

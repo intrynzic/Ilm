@@ -1,6 +1,7 @@
 workspace "Examples"
     architecture "x86_64"
     cppdialect (CPP_VER)
+    multiprocessorcompile "On"
 
     configurations
     {
@@ -11,11 +12,6 @@ workspace "Examples"
     solutionitems
     {
         "../.editorconfig"
-    }
-
-    flags
-    {
-        "MultiProcessorCompile"
     }
 
     defines
@@ -68,18 +64,14 @@ workspace "Examples"
         runtime "Release"
         symbols "Off"
         optimize "Full"
-        linktimeoptimization "on"
+        linktimeoptimization "On"
+        buffersecuritycheck "Off"
+        runtimechecks "Off"
+        incrementallink "Off"
 
         defines
         {
             "NDEBUG"
-        }
-
-        flags
-        {
-            "NoBufferSecurityCheck",
-            "NoRuntimeChecks",
-            "NoIncrementalLink"
         }
 
 include "Example-Ref"

@@ -4,7 +4,7 @@ from DeleteProjects import Delete
 
 
 def Generate():
-    subprocess.run(["Tools/Premake/premake5.exe", "vs2022"])
+    subprocess.run(["Tools/Premake/premake5.exe", "vs2026"])
 
 if __name__ == "__main__":
     os.chdir("../")

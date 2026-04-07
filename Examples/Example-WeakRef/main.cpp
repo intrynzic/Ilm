@@ -1,5 +1,5 @@
 #include <iostream>
-#include <IntricatePointers/IntricatePointers.hpp>
+#include <Ilm/Ilm.hpp>
 using namespace Intricate;
 
 
@@ -99,7 +99,7 @@ int main(int argc, char** argv)
 
     // This only sets the underlying pointer to nullptr since WeakRef is non-owning.
     constructedWeakRef = nullptr;
-    
+
     // Create a new ref of type 'BaseClass' that actually points to a 'DerivedClass'
     Ref<BaseClass> baseClassRef = CreateRef<DerivedClass>(21);
     baseClassRef->DoSomething();

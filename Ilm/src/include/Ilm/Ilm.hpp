@@ -1,5 +1,5 @@
 /**************************************************************************
- * IntricatePointers: https://github.com/DnA-IntRicate/IntricatePointers
+ * Intrynzic Lifetime Manager: https://github.com/intrynzic/Ilm
  * A single-header containing smart pointer implementations in C++20
  * ------------------------------------------------------------------------
  * Copyright 2025 Adam Foflonker

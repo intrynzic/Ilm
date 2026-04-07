@@ -1,5 +1,5 @@
 #include <iostream>
-#include <IntricatePointers/IntricatePointers.hpp>
+#include <Ilm/Ilm.hpp>
 using namespace Intricate;
 
 
@@ -28,7 +28,7 @@ int main(int argc, char** argv)
 
     std::cout << "Press Enter to start memory leak test\n";
     std::cin.get();
-    
+
     constexpr size_t MAX_ITERS = UINT64_MAX;
     for (size_t i = 0; i < MAX_ITERS; ++i)
     {

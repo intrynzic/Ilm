@@ -18,7 +18,7 @@ OUT_DIR = "%{wks.location}/bin/build/%{cfg.system}/%{cfg.architecture}/%{cfg.bui
 INT_DIR = "%{wks.location}/bin/intermediate/%{cfg.system}/%{cfg.architecture}/%{cfg.buildcfg}/%{prj.name}"
 
 -- This path is relative to the premake scripts for each Example/Test, not relative to this premake script
-INTRICATE_POINTERS_HPP_INCLUDE = "../../Ilm/src/include"
+ILM_HPP_INCLUDE = "../../Ilm/src/include"
 
 include "Examples"
 include "Tests"

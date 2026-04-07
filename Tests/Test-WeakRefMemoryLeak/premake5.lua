@@ -15,5 +15,5 @@ project "Test-WeakRefMemoryLeak"
     includedirs
     {
         ".",
-        "%{INTRICATE_POINTERS_HPP_INCLUDE}"
+        "%{ILM_HPP_INCLUDE}"
     }

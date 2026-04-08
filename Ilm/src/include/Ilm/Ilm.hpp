@@ -42,13 +42,13 @@ import <functional>;
 #endif
 
 #ifndef ILM_OMIT_NAMESPACE
-#   define ILM_NAMESPACE_BEGIN ILM_EXPORT namespace Intricate {
+#   define ILM_NAMESPACE_BEGIN ILM_EXPORT namespace ilm {
 #   define ILM_NAMESPACE_END }
-#   define _INTRICATE ::Intricate::
+#   define _ILM ::ilm::
 #else
 #   define ILM_NAMESPACE_BEGIN
 #   define ILM_NAMESPACE_END
-#   define _INTRICATE
+#   define _ILM
 #endif // !ILM_OMIT_NAMESPACE
 
 ILM_NAMESPACE_BEGIN
@@ -1237,20 +1237,20 @@ namespace std
     struct hash;
 
     ILM_EXPORT template<typename _Ty>
-        struct hash<_INTRICATE Scope<_Ty>>
+    struct hash<_ILM Scope<_Ty>>
     {
-        size_t operator()(const _INTRICATE Scope<_Ty>& ptr) const noexcept { return hash<_Ty*>{}(ptr.Raw()); }
+        size_t operator()(const _ILM Scope<_Ty>& ptr) const noexcept { return hash<_Ty*>{}(ptr.Raw()); }
     };
 
     ILM_EXPORT template<typename _Ty>
-        struct hash<_INTRICATE Ref<_Ty>>
+    struct hash<_ILM Ref<_Ty>>
     {
-        size_t operator()(const _INTRICATE Ref<_Ty>& ptr) const noexcept { return hash<_Ty*>{}(ptr.Raw()); }
+        size_t operator()(const _ILM Ref<_Ty>& ptr) const noexcept { return hash<_Ty*>{}(ptr.Raw()); }
     };
 
     ILM_EXPORT template<typename _Ty>
-        struct hash<_INTRICATE WeakRef<_Ty>>
+    struct hash<_ILM WeakRef<_Ty>>
     {
-        size_t operator()(const _INTRICATE WeakRef<_Ty>& ptr) const noexcept { return hash<_Ty*>{}(ptr.Raw()); }
+        size_t operator()(const _ILM WeakRef<_Ty>& ptr) const noexcept { return hash<_Ty*>{}(ptr.Raw()); }
     };
 }

@@ -1,5 +1,5 @@
 /**************************************************************************
- * IntricatePointers: https://github.com/DnA-IntRicate/IntricatePointers
+ * Intrynzic Lifetime Manager: https://github.com/intrynzic/Ilm
  * A single-header containing smart pointer implementations in C++20
  * ------------------------------------------------------------------------
  * Copyright 2025 Adam Foflonker
@@ -19,8 +19,8 @@
 
 #pragma once
 
-#ifdef INTRICATE_BUILD_MODULE
-#   define INTRICATE_EXPORT export
+#ifdef ILM_BUILD_MODULE
+#   define ILM_EXPORT export
 
 import <ostream>;
 import <type_traits>;
@@ -30,7 +30,7 @@ import <utility>;
 import <cstdint>;
 import <functional>;
 #else
-#   define INTRICATE_EXPORT
+#   define ILM_EXPORT
 
 #   include <ostream>
 #   include <type_traits>
@@ -41,19 +41,19 @@ import <functional>;
 #   include <functional>
 #endif
 
-#ifndef INTRICATE_OMIT_NAMESPACE
-#   define INTRICATE_NAMESPACE_BEGIN INTRICATE_EXPORT namespace Intricate {
-#   define INTRICATE_NAMESPACE_END }
-#   define _INTRICATE ::Intricate::
+#ifndef ILM_OMIT_NAMESPACE
+#   define ILM_NAMESPACE_BEGIN ILM_EXPORT namespace ilm {
+#   define ILM_NAMESPACE_END }
+#   define _ILM ::ilm::
 #else
-#   define INTRICATE_NAMESPACE_BEGIN
-#   define INTRICATE_NAMESPACE_END
-#   define _INTRICATE
-#endif // !INTRICATE_OMIT_NAMESPACE
+#   define ILM_NAMESPACE_BEGIN
+#   define ILM_NAMESPACE_END
+#   define _ILM
+#endif // !ILM_OMIT_NAMESPACE
 
-INTRICATE_NAMESPACE_BEGIN
+ILM_NAMESPACE_BEGIN
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 class Scope
 {
 public:
@@ -169,13 +169,13 @@ private:
     void (*m_Deleter)(void*) = nullptr; // Type-erased deleter
 };
 
-INTRICATE_EXPORT template<typename _Ty, typename... _Args, std::enable_if_t<!std::is_array_v<_Ty>, int> = 0>
+ILM_EXPORT template<typename _Ty, typename... _Args, std::enable_if_t<!std::is_array_v<_Ty>, int> = 0>
 constexpr Scope<_Ty> CreateScope(_Args&&... args) noexcept
 {
     return Scope<_Ty>(new _Ty(std::forward<_Args>(args)...));
 }
 
-INTRICATE_EXPORT template<typename _WantedType, typename _ScopeType>
+ILM_EXPORT template<typename _WantedType, typename _ScopeType>
 _WantedType* GetScopeBaseTypePtr(const Scope<_ScopeType>& scope) noexcept
 {
     return static_cast<_WantedType*>(scope.Raw());
@@ -420,7 +420,7 @@ private:
     friend class WeakRef<_Ty>;
 };
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 class Ref : public _RefBase<_Ty>
 {
 public:
@@ -550,13 +550,13 @@ private:
     friend class Ref;
 };
 
-INTRICATE_EXPORT template<typename _Ty, typename... _Args, std::enable_if_t<!std::is_array_v<_Ty>, int> = 0>
+ILM_EXPORT template<typename _Ty, typename... _Args, std::enable_if_t<!std::is_array_v<_Ty>, int> = 0>
 constexpr Ref<_Ty> CreateRef(_Args&&... args) noexcept
 {
     return Ref<_Ty>(new _Ty(std::forward<_Args>(args)...));
 }
 
-INTRICATE_EXPORT template<typename _WantedType, typename _RefType>
+ILM_EXPORT template<typename _WantedType, typename _RefType>
 _WantedType* GetRefBaseTypePtr(const Ref<_RefType>& ref) noexcept
 {
     return static_cast<_WantedType*>(ref.Raw());
@@ -579,7 +579,7 @@ _WantedType* GetRefBaseTypePtr(const Ref<_RefType>& ref) noexcept
 //    lifetime management. Only cast the magic unsafe spell if you know what you're doing!
 //
 // Use with extreme caution, for this type is dangerous...
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 class UnsafeRef : public _RefBase<_Ty>
 {
 public:
@@ -637,14 +637,14 @@ private:
 };
 
 // Unsafe cast and copy
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 UnsafeRef<_Ty> UnsafeRefCast(const Ref<_Ty>& ref) noexcept
 {
     return UnsafeRef<_Ty>(ref);
 }
 
 // Static cast and copy
-INTRICATE_EXPORT template<typename _WantedType, typename _RefType>
+ILM_EXPORT template<typename _WantedType, typename _RefType>
 Ref<_WantedType> StaticRefCast(const Ref<_RefType>& ref) noexcept
 {
     const auto ptr = static_cast<_WantedType*>(ref.Raw());
@@ -652,7 +652,7 @@ Ref<_WantedType> StaticRefCast(const Ref<_RefType>& ref) noexcept
 }
 
 // Static cast and move
-INTRICATE_EXPORT template<typename _WantedType, typename _RefType>
+ILM_EXPORT template<typename _WantedType, typename _RefType>
 Ref<_WantedType> StaticRefCast(Ref<_RefType>&& ref) noexcept
 {
     const auto ptr = static_cast<_WantedType*>(ref.Raw());
@@ -660,7 +660,7 @@ Ref<_WantedType> StaticRefCast(Ref<_RefType>&& ref) noexcept
 }
 
 // Dynamic cast and copy
-INTRICATE_EXPORT template<typename _WantedType, typename _RefType>
+ILM_EXPORT template<typename _WantedType, typename _RefType>
 Ref<_WantedType> DynamicRefCast(const Ref<_RefType>& ref) noexcept
 {
     const auto ptr = dynamic_cast<_WantedType*>(ref.Raw());
@@ -668,7 +668,7 @@ Ref<_WantedType> DynamicRefCast(const Ref<_RefType>& ref) noexcept
 }
 
 // Dynamic cast and move
-INTRICATE_EXPORT template<typename _WantedType, typename _RefType>
+ILM_EXPORT template<typename _WantedType, typename _RefType>
 Ref<_WantedType> DynamicRefCast(Ref<_RefType>&& ref) noexcept
 {
     const auto ptr = dynamic_cast<_WantedType*>(ref.Raw());
@@ -676,7 +676,7 @@ Ref<_WantedType> DynamicRefCast(Ref<_RefType>&& ref) noexcept
 }
 
 // Reinterpret cast and copy
-INTRICATE_EXPORT template<typename _WantedType, typename _RefType>
+ILM_EXPORT template<typename _WantedType, typename _RefType>
 Ref<_WantedType> ReinterpretRefCast(const Ref<_RefType>& ref) noexcept
 {
     const auto ptr = reinterpret_cast<_WantedType*>(ref.Raw());
@@ -684,7 +684,7 @@ Ref<_WantedType> ReinterpretRefCast(const Ref<_RefType>& ref) noexcept
 }
 
 // Reinterpret cast and move
-INTRICATE_EXPORT template<typename _WantedType, typename _RefType>
+ILM_EXPORT template<typename _WantedType, typename _RefType>
 Ref<_WantedType> ReinterpretRefCast(Ref<_RefType>&& ref) noexcept
 {
     const auto ptr = reinterpret_cast<_WantedType*>(ref.Raw());
@@ -692,7 +692,7 @@ Ref<_WantedType> ReinterpretRefCast(Ref<_RefType>&& ref) noexcept
 }
 
 // Const cast and copy
-INTRICATE_EXPORT template<typename _WantedType, typename _RefType>
+ILM_EXPORT template<typename _WantedType, typename _RefType>
 Ref<_WantedType> ConstRefCast(const Ref<_RefType>& ref) noexcept
 {
     const auto ptr = const_cast<_WantedType*>(ref.Raw());
@@ -700,14 +700,14 @@ Ref<_WantedType> ConstRefCast(const Ref<_RefType>& ref) noexcept
 }
 
 // Const cast and move
-INTRICATE_EXPORT template<typename _WantedType, typename _RefType>
+ILM_EXPORT template<typename _WantedType, typename _RefType>
 Ref<_WantedType> ConstRefCast(Ref<_RefType>&& ref) noexcept
 {
     const auto ptr = const_cast<_WantedType*>(ref.Raw());
     return Ref<_WantedType>(ptr, std::move(ref));
 }
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 class WeakRef : public _RefBase<_Ty>
 {
 public:
@@ -830,427 +830,427 @@ private:
     friend class WeakRef;
 };
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 using UniquePtr = std::unique_ptr<_Ty>;
 
-INTRICATE_EXPORT template<typename _Ty, typename... _Args>
+ILM_EXPORT template<typename _Ty, typename... _Args>
 constexpr UniquePtr<_Ty> CreateUniquePtr(_Args&&... args) noexcept
 {
     return std::make_unique<_Ty>(std::forward<_Args>(args)...);
 }
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 using SharedPtr = std::shared_ptr<_Ty>;
 
-INTRICATE_EXPORT template<typename _Ty, typename... _Args>
+ILM_EXPORT template<typename _Ty, typename... _Args>
 constexpr SharedPtr<_Ty> CreateSharedPtr(_Args&&... args) noexcept
 {
     return std::make_shared<_Ty>(std::forward<_Args>(args)...);
 }
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 using WeakPtr = std::weak_ptr<_Ty>;
 
-INTRICATE_EXPORT template<typename _Elem, typename _Traits, typename _Ty>
+ILM_EXPORT template<typename _Elem, typename _Traits, typename _Ty>
 std::basic_ostream<_Elem, _Traits>& operator<<(std::basic_ostream<_Elem, _Traits>& ostream, const Scope<_Ty>& ptr)
 {
     return ostream << ptr.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Elem, typename _Traits, typename _Ty>
+ILM_EXPORT template<typename _Elem, typename _Traits, typename _Ty>
 std::basic_ostream<_Elem, _Traits>& operator<<(std::basic_ostream<_Elem, _Traits>& ostream, const Ref<_Ty>& ptr)
 {
     return ostream << ptr.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Elem, typename _Traits, typename _Ty>
+ILM_EXPORT template<typename _Elem, typename _Traits, typename _Ty>
 std::basic_ostream<_Elem, _Traits>& operator<<(std::basic_ostream<_Elem, _Traits>& ostream, const WeakRef<_Ty>& ptr)
 {
     return ostream << ptr.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator==(const Ref<_Ty1>& left, const Ref<_Ty2>& right) noexcept
 {
     return left.Raw() == right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator==(const Ref<_Ty1>& left, _Ty2* right) noexcept
 {
     return left.Raw() == right;
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator==(_Ty1* left, const Ref<_Ty2> right) noexcept
 {
     return left == right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 bool operator==(const Ref<_Ty>& left, std::nullptr_t) noexcept
 {
     return left.Raw() == nullptr;
 }
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 bool operator==(std::nullptr_t, const Ref<_Ty>& right) noexcept
 {
     return nullptr == right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator!=(const Ref<_Ty1>& left, const Ref<_Ty2>& right) noexcept
 {
     return left.Raw() != right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator!=(const Ref<_Ty1>& left, _Ty2* right) noexcept
 {
     return left.Raw() != right;
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator!=(_Ty1* left, const Ref<_Ty2>& right) noexcept
 {
     return left != right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 bool operator!=(const Ref<_Ty>& left, std::nullptr_t) noexcept
 {
     return left.Raw() != nullptr;
 }
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 bool operator!=(std::nullptr_t, const Ref<_Ty>& right) noexcept
 {
     return nullptr != right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator<(const Ref<_Ty1>& left, const Ref<_Ty2>& right) noexcept
 {
     return left.Raw() < right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator<(const Ref<_Ty1>& left, _Ty2* right) noexcept
 {
     return left.Raw() < right;
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator<(_Ty1* left, const Ref<_Ty2>& right) noexcept
 {
     return left < right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 bool operator<(const Ref<_Ty>& left, std::nullptr_t) noexcept
 {
     return left.Raw() < static_cast<_Ty*>(nullptr);
 }
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 bool operator<(std::nullptr_t, const Ref<_Ty>& right) noexcept
 {
     return static_cast<_Ty*>(nullptr) < right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator<=(const Ref<_Ty1>& left, const Ref<_Ty2>& right) noexcept
 {
     return left.Raw() <= right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator<=(const Ref<_Ty1>& left, _Ty2* right) noexcept
 {
     return left.Raw() <= right;
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator<=(_Ty1* left, const Ref<_Ty2>& right) noexcept
 {
     return left <= right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 bool operator<=(const Ref<_Ty>& left, std::nullptr_t) noexcept
 {
     return left.Raw() <= static_cast<_Ty*>(nullptr);
 }
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 bool operator<=(std::nullptr_t, const Ref<_Ty>& right) noexcept
 {
     return static_cast<_Ty*>(nullptr) <= right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator>(const Ref<_Ty1>& left, const Ref<_Ty2>& right) noexcept
 {
     return left.Raw() > right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator>(const Ref<_Ty1>& left, _Ty2* right) noexcept
 {
     return left.Raw() > right;
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator>(_Ty1* left, const Ref<_Ty2>& right) noexcept
 {
     return left > right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 bool operator>(const Ref<_Ty>& left, std::nullptr_t) noexcept
 {
     return left.Raw() > static_cast<_Ty*>(nullptr);
 }
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 bool operator>(std::nullptr_t, const Ref<_Ty>& right) noexcept
 {
     return static_cast<_Ty*>(nullptr) > right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator>=(const Ref<_Ty1>& left, const Ref<_Ty2>& right) noexcept
 {
     return left.Raw() >= right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator>=(const Ref<_Ty1>& left, _Ty2* right) noexcept
 {
     return left.Raw() >= right;
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator>=(_Ty1* left, const Ref<_Ty2>& right) noexcept
 {
     return left >= right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 bool operator>=(const Ref<_Ty>& left, std::nullptr_t) noexcept
 {
     return left.Raw() >= static_cast<_Ty*>(nullptr);
 }
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 bool operator>=(std::nullptr_t, const Ref<_Ty>& right) noexcept
 {
     return static_cast<_Ty*>(nullptr) >= right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator==(const WeakRef<_Ty1>& left, const WeakRef<_Ty2>& right) noexcept
 {
     return left.Raw() == right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator==(const WeakRef<_Ty1>& left, _Ty2* right) noexcept
 {
     return left.Raw() == right;
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator==(_Ty1* left, const WeakRef<_Ty2> right) noexcept
 {
     return left == right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 bool operator==(const WeakRef<_Ty>& left, std::nullptr_t) noexcept
 {
     return left.Raw() == nullptr;
 }
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 bool operator==(std::nullptr_t, const WeakRef<_Ty>& right) noexcept
 {
     return nullptr == right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator!=(const WeakRef<_Ty1>& left, const WeakRef<_Ty2>& right) noexcept
 {
     return left.Raw() != right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator!=(const WeakRef<_Ty1>& left, _Ty2* right) noexcept
 {
     return left.Raw() != right;
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator!=(_Ty1* left, const WeakRef<_Ty2>& right) noexcept
 {
     return left != right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 bool operator!=(const WeakRef<_Ty>& left, std::nullptr_t) noexcept
 {
     return left.Raw() != nullptr;
 }
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 bool operator!=(std::nullptr_t, const WeakRef<_Ty>& right) noexcept
 {
     return nullptr != right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator<(const Ref<_Ty1>& left, const WeakRef<_Ty2>& right) noexcept
 {
     return left.Raw() < right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator<(const WeakRef<_Ty1>& left, _Ty2* right) noexcept
 {
     return left.Raw() < right;
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator<(_Ty1* left, const WeakRef<_Ty2>& right) noexcept
 {
     return left < right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 bool operator<(const WeakRef<_Ty>& left, std::nullptr_t) noexcept
 {
     return left.Raw() < static_cast<_Ty*>(nullptr);
 }
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 bool operator<(std::nullptr_t, const WeakRef<_Ty>& right) noexcept
 {
     return static_cast<_Ty*>(nullptr) < right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator<=(const WeakRef<_Ty1>& left, const WeakRef<_Ty2>& right) noexcept
 {
     return left.Raw() <= right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator<=(const WeakRef<_Ty1>& left, _Ty2* right) noexcept
 {
     return left.Raw() <= right;
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator<=(_Ty1* left, const WeakRef<_Ty2>& right) noexcept
 {
     return left <= right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 bool operator<=(const WeakRef<_Ty>& left, std::nullptr_t) noexcept
 {
     return left.Raw() <= static_cast<_Ty*>(nullptr);
 }
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 bool operator<=(std::nullptr_t, const WeakRef<_Ty>& right) noexcept
 {
     return static_cast<_Ty*>(nullptr) <= right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator>(const WeakRef<_Ty1>& left, const WeakRef<_Ty2>& right) noexcept
 {
     return left.Raw() > right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator>(const WeakRef<_Ty1>& left, _Ty2* right) noexcept
 {
     return left.Raw() > right;
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator>(_Ty1* left, const WeakRef<_Ty2>& right) noexcept
 {
     return left > right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 bool operator>(const WeakRef<_Ty>& left, std::nullptr_t) noexcept
 {
     return left.Raw() > static_cast<_Ty*>(nullptr);
 }
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 bool operator>(std::nullptr_t, const WeakRef<_Ty>& right) noexcept
 {
     return static_cast<_Ty*>(nullptr) > right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator>=(const WeakRef<_Ty1>& left, const WeakRef<_Ty2>& right) noexcept
 {
     return left.Raw() >= right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator>=(const WeakRef<_Ty1>& left, _Ty2* right) noexcept
 {
     return left.Raw() >= right;
 }
 
-INTRICATE_EXPORT template<typename _Ty1, typename _Ty2>
+ILM_EXPORT template<typename _Ty1, typename _Ty2>
 bool operator>=(_Ty1* left, const WeakRef<_Ty2>& right) noexcept
 {
     return left >= right.Raw();
 }
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 bool operator>=(const WeakRef<_Ty>& left, std::nullptr_t) noexcept
 {
     return left.Raw() >= static_cast<_Ty*>(nullptr);
 }
 
-INTRICATE_EXPORT template<typename _Ty>
+ILM_EXPORT template<typename _Ty>
 bool operator>=(std::nullptr_t, const WeakRef<_Ty>& right) noexcept
 {
     return static_cast<_Ty*>(nullptr) >= right.Raw();
 }
 
-INTRICATE_NAMESPACE_END
+ILM_NAMESPACE_END
 
 namespace std
 {
     template<class _Kty>
     struct hash;
 
-    INTRICATE_EXPORT template<typename _Ty>
-        struct hash<_INTRICATE Scope<_Ty>>
+    ILM_EXPORT template<typename _Ty>
+    struct hash<_ILM Scope<_Ty>>
     {
-        size_t operator()(const _INTRICATE Scope<_Ty>& ptr) const noexcept { return hash<_Ty*>{}(ptr.Raw()); }
+        size_t operator()(const _ILM Scope<_Ty>& ptr) const noexcept { return hash<_Ty*>{}(ptr.Raw()); }
     };
 
-    INTRICATE_EXPORT template<typename _Ty>
-        struct hash<_INTRICATE Ref<_Ty>>
+    ILM_EXPORT template<typename _Ty>
+    struct hash<_ILM Ref<_Ty>>
     {
-        size_t operator()(const _INTRICATE Ref<_Ty>& ptr) const noexcept { return hash<_Ty*>{}(ptr.Raw()); }
+        size_t operator()(const _ILM Ref<_Ty>& ptr) const noexcept { return hash<_Ty*>{}(ptr.Raw()); }
     };
 
-    INTRICATE_EXPORT template<typename _Ty>
-        struct hash<_INTRICATE WeakRef<_Ty>>
+    ILM_EXPORT template<typename _Ty>
+    struct hash<_ILM WeakRef<_Ty>>
     {
-        size_t operator()(const _INTRICATE WeakRef<_Ty>& ptr) const noexcept { return hash<_Ty*>{}(ptr.Raw()); }
+        size_t operator()(const _ILM WeakRef<_Ty>& ptr) const noexcept { return hash<_Ty*>{}(ptr.Raw()); }
     };
 }

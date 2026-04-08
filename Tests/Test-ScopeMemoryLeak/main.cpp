@@ -1,6 +1,6 @@
 #include <iostream>
-#include <IntricatePointers/IntricatePointers.hpp>
-using namespace Intricate;
+#include <Ilm/Ilm.hpp>
+using namespace ilm;
 
 
 class MemLeakTest

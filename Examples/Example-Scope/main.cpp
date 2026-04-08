@@ -1,6 +1,6 @@
 #include <iostream>
-#include <IntricatePointers/IntricatePointers.hpp>
-using namespace Intricate;
+#include <Ilm/Ilm.hpp>
+using namespace ilm;
 
 
 class ExampleClass
@@ -84,7 +84,7 @@ int main(int argc, char** argv)
     Scope<ExampleClass> newConstructedScope = std::move(constructedScope);
     std::cout << "newConstructedScope address after move: " << newConstructedScope << '\n';
     std::cout << "constructedScope address after move: " << constructedScope << '\n';   // Intentional use-after-move
-    
+
     // Access the data of newConstructedScope
     std::cout << "newConstructedScope F1: " << newConstructedScope->GetF1() << '\n';
     std::cout << "newConstructedScope F2: " << newConstructedScope->GetF2() << '\n';

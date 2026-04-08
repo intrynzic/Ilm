@@ -1,4 +1,5 @@
-# IntricatePointers
+# Intrynzic Lifetime Manager
+
 A single-header file written in `C++20` implementing 3 different kinds of smart pointers. The library's API contains the following types:
 
 - **Scope**: A scoped unique pointer intended to resemble `std::unique_ptr`.
@@ -65,7 +66,7 @@ weakRef = nullptr;      // Release the weak reference (this only sets the intern
 ```
 
 ## License
-IntricatePointers is licensed under the Apache-2.0 License. See [LICENSE](LICENSE).
+Ilm is licensed under the Apache-2.0 License. See [LICENSE](LICENSE).
 
 ```
 Copyright 2025 Adam Foflonker

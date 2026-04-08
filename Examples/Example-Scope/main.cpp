@@ -1,6 +1,6 @@
 #include <iostream>
 #include <Ilm/Ilm.hpp>
-using namespace Intricate;
+using namespace ilm;
 
 
 class ExampleClass

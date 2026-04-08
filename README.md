@@ -1,6 +1,6 @@
 # Intrynzic Lifetime Manager
 
-A single-header file written in `C++20` implementing 3 different kinds of smart pointers. The library's API contains the following types:
+A single-header file written in `C++23` implementing 3 different kinds of smart pointers. The library's API contains the following types:
 
 - **Scope**: A scoped unique pointer intended to resemble `std::unique_ptr`.
 - **Ref**: A smart pointer intended to resemble `std::shared_ptr` that implements an intrusive reference counting system.
@@ -66,10 +66,11 @@ weakRef = nullptr;      // Release the weak reference (this only sets the intern
 ```
 
 ## License
+
 Ilm is licensed under the Apache-2.0 License. See [LICENSE](LICENSE).
 
 ```
-Copyright 2025 Adam Foflonker
+Copyright 2026 Intrynzic Software
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

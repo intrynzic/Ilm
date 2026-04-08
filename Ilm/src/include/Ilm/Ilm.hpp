@@ -1,8 +1,11 @@
 /**************************************************************************
  * Intrynzic Lifetime Manager: https://github.com/intrynzic/Ilm
- * A single-header containing smart pointer implementations in C++20
+ *
+ * A single-header library implemented in C++23 for managing the lifetimes
+ * and ownership semantics of memory resources.
  * ------------------------------------------------------------------------
- * Copyright 2025 Adam Foflonker
+ *
+ * Copyright 2026 Intrynzic Software
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.

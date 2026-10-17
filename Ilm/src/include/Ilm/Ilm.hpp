@@ -435,7 +435,7 @@ public:
     template<typename _Ty2, std::enable_if_t<std::is_base_of_v<_Ty, _Ty2>, int> = 0>
     constexpr Ref(const Ref<_Ty2>& ref) noexcept { this->_CopyConstructFrom(ref); }
 
-    Ref(const Ref<_Ty>& ref) noexcept { this->_CopyConstructFrom(ref); }
+    constexpr Ref(const Ref<_Ty>& ref) noexcept { this->_CopyConstructFrom(ref); }
 
     template<typename _Ty2, typename _Ty3>
     constexpr Ref(_Ty2* newPtr, const Ref<_Ty3>& owner) noexcept { this->_AliasConstructFrom(newPtr, owner); }

@@ -27,13 +27,13 @@
 import std;
 #else
 #   define ILM_EXPORT
-#   include <ostream>
-#   include <type_traits>
-#   include <memory>
 #   include <atomic>
-#   include <utility>
 #   include <cstdint>
+#   include <ostream>
 #   include <functional>
+#   include <memory>
+#   include <type_traits>
+#   include <utility>
 #endif
 
 #ifndef ILM_OMIT_NAMESPACE

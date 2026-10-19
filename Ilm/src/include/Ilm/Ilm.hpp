@@ -24,17 +24,9 @@
 
 #ifdef ILM_BUILD_MODULE
 #   define ILM_EXPORT export
-
-import <ostream>;
-import <type_traits>;
-import <memory>;
-import <atomic>;
-import <utility>;
-import <cstdint>;
-import <functional>;
+import std;
 #else
 #   define ILM_EXPORT
-
 #   include <ostream>
 #   include <type_traits>
 #   include <memory>

@@ -1,7 +1,7 @@
 /**************************************************************************
  * Intrynzic Lifetime Manager: https://github.com/intrynzic/Ilm
  *
- * A single-header library implemented in C++23 for managing the lifetimes
+ * A single-header library implemented in C++26 for managing the lifetimes
  * and ownership semantics of memory resources.
  * ------------------------------------------------------------------------
  *

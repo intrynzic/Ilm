@@ -28,10 +28,11 @@ import std;
 #else
 #   define ILM_EXPORT
 #   include <atomic>
+#   include <concepts>
 #   include <cstdint>
-#   include <ostream>
 #   include <functional>
 #   include <memory>
+#   include <ostream>
 #   include <type_traits>
 #   include <utility>
 #endif
@@ -48,16 +49,22 @@ import std;
 
 ILM_NAMESPACE_BEGIN
 
+template<typename _Ty>
+concept NonVoid = !std::is_void_v<_Ty>;
+
+template<typename _Ty>
+concept NonArray = !std::is_array_v<_Ty>;
+
 ILM_EXPORT template<typename _Ty>
 class Scope
 {
 public:
     constexpr explicit Scope(_Ty* ptr) noexcept : m_Ptr(ptr), m_Deleter(&_DefaultDelete<_Ty>) {};
 
-    template<typename _Ty2, std::enable_if_t<std::is_base_of_v<_Ty, _Ty2>, int> = 0>
+    template<std::derived_from<_Ty> _Ty2>
     constexpr explicit Scope(_Ty2* ptr) noexcept : m_Ptr(ptr), m_Deleter(&_DefaultDelete<_Ty2>) {};
 
-    template<typename _Ty2, std::enable_if_t<std::is_base_of_v<_Ty, _Ty2>, int> = 0>
+    template<std::derived_from<_Ty> _Ty2>
     constexpr Scope(Scope<_Ty2>&& scope) noexcept : m_Ptr(scope.Release()), m_Deleter(std::exchange(scope.m_Deleter, nullptr)) {};
 
     constexpr Scope(Scope<_Ty>&& scope) noexcept : m_Ptr(scope.Release()), m_Deleter(std::exchange(scope.m_Deleter, nullptr)) {};
@@ -87,7 +94,7 @@ public:
         }
     }
 
-    template<typename _Ty2, std::enable_if_t<std::is_base_of_v<_Ty, _Ty2>, int> = 0>
+    template<std::derived_from<_Ty> _Ty2>
     constexpr void Reset(_Ty2* newPtr) noexcept
     {
         Scope<_Ty2>(newPtr).Swap(*this);
@@ -129,7 +136,7 @@ public:
         return *this;
     }
 
-    template<typename _Ty2, std::enable_if_t<std::is_base_of_v<_Ty, _Ty2>, int> = 0>
+    template<std::derived_from<_Ty> _Ty2>
     constexpr Scope<_Ty>& operator=(Scope<_Ty2>&& other) noexcept
     {
         Scope<_Ty>(std::move(other)).Swap(*this);
@@ -142,10 +149,10 @@ public:
         return *this;
     }
 
-    template<typename _Ty2 = _Ty, std::enable_if_t<!std::is_void_v<_Ty2>, int> = 0>
+    template<NonVoid  _Ty2 = _Ty>
     constexpr _Ty2* operator->() const noexcept { return Raw(); }
 
-    template<typename _Ty2 = _Ty, std::enable_if_t<!std::is_void_v<_Ty2>, int> = 0>
+    template<NonVoid  _Ty2 = _Ty>
     constexpr _Ty2& operator*() const noexcept { return *Raw(); }
 
 private:
@@ -164,7 +171,7 @@ private:
     void (*m_Deleter)(void*) = nullptr; // Type-erased deleter
 };
 
-ILM_EXPORT template<typename _Ty, typename... _Args, std::enable_if_t<!std::is_array_v<_Ty>, int> = 0>
+ILM_EXPORT template<NonArray _Ty, typename... _Args>
 constexpr Scope<_Ty> CreateScope(_Args&&... args) noexcept
 {
     return Scope<_Ty>(new _Ty(std::forward<_Args>(args)...));
@@ -421,10 +428,10 @@ class Ref : public _RefBase<_Ty>
 public:
     constexpr explicit Ref(_Ty* ptr) noexcept { this->_ConstructFromRaw(ptr); }
 
-    template<typename _Ty2, std::enable_if_t<std::is_base_of_v<_Ty, _Ty2>, int> = 0>
+    template<std::derived_from<_Ty> _Ty2>
     constexpr explicit Ref(_Ty2* ptr) noexcept { this->_ConstructFromRaw(ptr); }
 
-    template<typename _Ty2, std::enable_if_t<std::is_base_of_v<_Ty, _Ty2>, int> = 0>
+    template<std::derived_from<_Ty> _Ty2>
     constexpr Ref(const Ref<_Ty2>& ref) noexcept { this->_CopyConstructFrom(ref); }
 
     constexpr Ref(const Ref<_Ty>& ref) noexcept { this->_CopyConstructFrom(ref); }
@@ -435,12 +442,12 @@ public:
     template<typename _Ty2, typename _Ty3>
     constexpr Ref(_Ty2* newPtr, Ref<_Ty3>&& owner) noexcept { this->_MoveAliasConstructFrom(newPtr, std::move(owner)); }
 
-    template<typename _Ty2, std::enable_if_t<std::is_base_of_v<_Ty, _Ty2>, int> = 0>
+    template<std::derived_from<_Ty> _Ty2>
     constexpr Ref(Ref<_Ty2>&& ref) noexcept { this->_MoveConstructFrom(std::move(ref)); }
 
     constexpr Ref(Ref<_Ty>&& ref) noexcept { this->_MoveConstructFrom(std::move(ref)); }
 
-    template<typename _Ty2, std::enable_if_t<std::is_base_of_v<_Ty, _Ty2>, int> = 0>
+    template <std::derived_from<_Ty> _Ty2>
     constexpr explicit Ref(const WeakRef<_Ty2>& weak) noexcept { this->_ConstructFromWeak(weak); }
 
     constexpr explicit Ref(const WeakRef<_Ty>& weak) noexcept { this->_ConstructFromWeak(weak); }
@@ -455,7 +462,7 @@ public:
             this->_Swap(other);
     }
 
-    template<typename _Ty2, std::enable_if_t<std::is_base_of_v<_Ty, _Ty2>, int> = 0>
+    template <std::derived_from<_Ty> _Ty2>
     constexpr void Reset(_Ty2* newPtr) noexcept
     {
         Ref<_Ty2>(newPtr).Swap(*this);
@@ -508,7 +515,7 @@ public:
         return *this;
     }
 
-    template<typename _Ty2, std::enable_if_t<std::is_base_of_v<_Ty, _Ty2>, int> = 0>
+    template <std::derived_from<_Ty> _Ty2>
     constexpr Ref<_Ty>& operator=(const Ref<_Ty2>& other) noexcept
     {
         Ref<_Ty>(other).Swap(*this);
@@ -521,7 +528,7 @@ public:
         return *this;
     }
 
-    template<typename _Ty2, std::enable_if_t<std::is_base_of_v<_Ty, _Ty2>, int> = 0>
+    template <std::derived_from<_Ty> _Ty2>
     constexpr Ref<_Ty>& operator=(Ref<_Ty2>&& other) noexcept
     {
         Ref<_Ty>(std::move(other)).Swap(*this);
@@ -534,10 +541,10 @@ public:
         return *this;
     }
 
-    template<typename _Ty2 = _Ty, std::enable_if_t<!std::is_void_v<_Ty2>, int> = 0>
+    template <std::derived_from<_Ty> _Ty2>
     constexpr _Ty2* operator->() const noexcept { return this->Raw(); }
 
-    template<typename _Ty2 = _Ty, std::enable_if_t<!std::is_void_v<_Ty2>, int> = 0>
+    template <std::derived_from<_Ty> _Ty2>
     constexpr _Ty2& operator*() const noexcept { return *Raw(); }
 
 private:
@@ -545,7 +552,7 @@ private:
     friend class Ref;
 };
 
-ILM_EXPORT template<typename _Ty, typename... _Args, std::enable_if_t<!std::is_array_v<_Ty>, int> = 0>
+ILM_EXPORT template <NonArray _Ty, typename... _Args>
 constexpr Ref<_Ty> CreateRef(_Args&&... args) noexcept
 {
     return Ref<_Ty>(new _Ty(std::forward<_Args>(args)...));
@@ -580,7 +587,7 @@ class UnsafeRef : public _RefBase<_Ty>
 public:
     constexpr UnsafeRef(const Ref<_Ty>& ref) noexcept { this->_UnsafelyConstructFrom(ref); }
 
-    template<typename _Ty2, std::enable_if_t<std::is_base_of_v<_Ty, _Ty2>, int> = 0>
+    template <std::derived_from<_Ty> _Ty2>
     constexpr UnsafeRef(const Ref<_Ty2>& ref) noexcept { this->_UnsafelyConstructFrom(ref); }
 
     constexpr UnsafeRef(std::nullptr_t) noexcept : _RefBase<_Ty>(nullptr) {};
@@ -708,15 +715,15 @@ class WeakRef : public _RefBase<_Ty>
 public:
     constexpr WeakRef(const Ref<_Ty>& ref) noexcept { this->_WeaklyConstructFrom(ref); }
 
-    template<typename _Ty2, std::enable_if_t<std::is_base_of_v<_Ty, _Ty2>, int> = 0>
+    template <std::derived_from<_Ty> _Ty2>
     constexpr WeakRef(const Ref<_Ty2>& ref) noexcept { this->_WeaklyConstructFrom(ref); }
 
-    template<typename _Ty2, std::enable_if_t<std::is_base_of_v<_Ty, _Ty2>, int> = 0>
+    template <std::derived_from<_Ty> _Ty2>
     constexpr WeakRef(const WeakRef<_Ty2>& weakRef) noexcept { this->_WeaklyConstructFrom(weakRef); }
 
     constexpr WeakRef(const WeakRef<_Ty>& weakRef) noexcept { this->_WeaklyConstructFrom(weakRef); }
 
-    template<typename _Ty2, std::enable_if_t<std::is_base_of_v<_Ty, _Ty2>, int> = 0>
+    template <std::derived_from<_Ty> _Ty2>
     constexpr WeakRef(WeakRef<_Ty2>&& weakRef) noexcept { this->_MoveConstructFrom(std::move(weakRef)); }
 
     constexpr WeakRef(WeakRef<_Ty>&& weakRef) noexcept { this->_MoveConstructFrom(std::move(weakRef)); }
@@ -781,7 +788,7 @@ public:
         return *this;
     }
 
-    template<typename _Ty2, std::enable_if_t<std::is_base_of_v<_Ty, _Ty2>, int> = 0>
+    template <std::derived_from<_Ty> _Ty2>
     constexpr WeakRef<_Ty>& operator=(const WeakRef<_Ty2>& other) noexcept
     {
         WeakRef<_Ty>(other).Swap(*this);
@@ -794,7 +801,7 @@ public:
         return *this;
     }
 
-    template<typename _Ty2, std::enable_if_t<std::is_base_of_v<_Ty, _Ty2>, int> = 0>
+    template <std::derived_from<_Ty> _Ty2>
     constexpr WeakRef<_Ty>& operator=(WeakRef<_Ty2>&& other) noexcept
     {
         WeakRef<_Ty>(std::move(other)).Swap(*this);
@@ -807,7 +814,7 @@ public:
         return *this;
     }
 
-    template<typename _Ty2, std::enable_if_t<std::is_base_of_v<_Ty, _Ty2>, int> = 0>
+    template <std::derived_from<_Ty> _Ty2>
     constexpr WeakRef<_Ty>& operator=(const Ref<_Ty2>& ref) noexcept
     {
         WeakRef<_Ty>(ref).Swap(*this);

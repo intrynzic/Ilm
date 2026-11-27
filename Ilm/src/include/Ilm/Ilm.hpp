@@ -64,7 +64,7 @@ concept _DerivedFrom = std::is_base_of_v<Base, T2>;
 
 // Gates operator-> / operator* so that Ref<void> / Scope<void> remain usable.
 template <typename T>
-concept _NonVoid = !std::is_void_v<T>;
+concept _NonVoid = !std::same_as<T, void>;
 
 // Gates CreateScope / CreateRef (array types are not supported yet).
 // TODO(Adam): Add support for arrays!
@@ -75,7 +75,7 @@ concept _NonArray = !std::is_array_v<T>;
 // always false for those so _DerivedFrom cannot express it (class types are covered by _DerivedFrom).
 // Usage: template<_AddsConst<T> T2> means T must be const T2
 template <typename T2, typename Base>
-concept _AddsConst = !std::is_class_v<T2> && !std::is_const_v<T2> && std::is_same_v<const T2, Base>;
+concept _AddsConst = !std::is_const_v<T2> && std::same_as<std::add_const_t<T2>, Base>;
 
 ILM_EXPORT template <typename T>
 class Scope
@@ -108,7 +108,7 @@ public:
         if (m_Ptr)
         {
             if (m_Deleter)
-                m_Deleter((void*)m_Ptr);
+                m_Deleter(static_cast<void*>(m_Ptr));
 
             m_Ptr = nullptr;
         }
@@ -280,7 +280,7 @@ protected:
             if (m_Ptr)
             {
                 if (m_Deleter)
-                    m_Deleter((void*)m_Ptr);
+                    m_Deleter(static_cast<void*>(m_Ptr));
 
                 m_Ptr = nullptr;
             }

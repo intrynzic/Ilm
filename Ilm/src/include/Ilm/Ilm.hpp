@@ -187,7 +187,7 @@ private:
     friend class Scope;
 
 private:
-    T* m_Ptr               = nullptr;
+    T* m_Ptr                 = nullptr;
     void (*m_Deleter)(void*) = nullptr;  // Type-erased deleter
 };
 
@@ -248,7 +248,7 @@ protected:
     constexpr ~_RefBase() noexcept = default;
 
 public:
-    _RefBase(const _RefBase<T>&)                 = delete;
+    _RefBase(const _RefBase<T>&)               = delete;
     _RefBase<T>& operator=(const _RefBase<T>&) = delete;
 
 protected:
@@ -407,7 +407,7 @@ private:
     }
 
 private:
-    T* m_Ptr                  = nullptr;
+    T* m_Ptr                    = nullptr;
     _AtomicRefCount* m_RefCount = nullptr;
     void (*m_Deleter)(void*)    = nullptr;  // Type-erased deleter
 
@@ -1205,7 +1205,7 @@ bool operator>=(std::nullptr_t, const WeakRef<T>& right) noexcept
     return static_cast<T*>(nullptr) >= right.Raw();
 }
 
-ILM_NAMESPACE_END // namespace ilm
+ILM_NAMESPACE_END
 
 namespace std
 {

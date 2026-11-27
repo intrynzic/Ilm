@@ -825,27 +825,6 @@ private:
     friend class WeakRef;
 };
 
-ILM_EXPORT template <typename _Ty>
-using UniquePtr = std::unique_ptr<_Ty>;
-
-ILM_EXPORT template <typename _Ty, typename... _Args>
-constexpr UniquePtr<_Ty> CreateUniquePtr(_Args&&... args) noexcept
-{
-    return std::make_unique<_Ty>(std::forward<_Args>(args)...);
-}
-
-ILM_EXPORT template <typename _Ty>
-using SharedPtr = std::shared_ptr<_Ty>;
-
-ILM_EXPORT template <typename _Ty, typename... _Args>
-constexpr SharedPtr<_Ty> CreateSharedPtr(_Args&&... args) noexcept
-{
-    return std::make_shared<_Ty>(std::forward<_Args>(args)...);
-}
-
-ILM_EXPORT template <typename _Ty>
-using WeakPtr = std::weak_ptr<_Ty>;
-
 ILM_EXPORT template <typename _Elem, typename _Traits, typename _Ty>
 std::basic_ostream<_Elem, _Traits>& operator<<(std::basic_ostream<_Elem, _Traits>& ostream, const Scope<_Ty>& ptr)
 {

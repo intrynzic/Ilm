@@ -6,13 +6,12 @@ using namespace ilm;
 class ExampleClass
 {
 public:
-    constexpr ExampleClass(float f1, float f2, int64_t i1) noexcept : m_F1(f1), m_F2(f2), m_I1(i1) { };
+    constexpr ExampleClass(float f1, float f2, int64_t i1) noexcept
+        : m_F1(f1), m_F2(f2), m_I1(i1) { };
+
     ExampleClass() = default;
 
-    ~ExampleClass() noexcept
-    {
-        std::cout << "ExampleClass .dtor called on " << this << '\n';
-    }
+    ~ExampleClass() noexcept { std::cout << "ExampleClass .dtor called on " << this << '\n'; }
 
     constexpr float GetF1() const noexcept { return m_F1; }
     constexpr float GetF2() const noexcept { return m_F2; }
@@ -27,16 +26,15 @@ private:
 class BaseClass
 {
 public:
-    constexpr BaseClass(int number) noexcept : m_Number(number) { };
+    constexpr BaseClass(int number) noexcept
+        : m_Number(number) { };
+
     BaseClass() = default;
 
     // This destructor must be marked virtual to allow the destructors of any child classes to also be called when this object is free'd.
-    virtual ~BaseClass() noexcept
-    {
-        std::cout << "BaseClass .dtor called on " << this << '\n';
-    }
+    virtual ~BaseClass() noexcept { std::cout << "BaseClass .dtor called on " << this << '\n'; }
 
-    virtual void DoSomething() const noexcept = 0;
+    virtual void DoSomething() const noexcept     = 0;
     virtual void DoSomethingElse() const noexcept = 0;
 
     constexpr int GetNumber() const noexcept { return m_Number; }
@@ -48,23 +46,15 @@ protected:
 class DerivedClass : public BaseClass
 {
 public:
-    constexpr DerivedClass(int number) noexcept : BaseClass(number) { };
+    constexpr DerivedClass(int number) noexcept
+        : BaseClass(number) { };
 
     // This destructor will always be called before BaseClass's destructor.
-    virtual ~DerivedClass() noexcept
-    {
-        std::cout << "DerivedClass .dtor called on " << this << '\n';
-    }
+    virtual ~DerivedClass() noexcept { std::cout << "DerivedClass .dtor called on " << this << '\n'; }
 
-    virtual void DoSomething() const noexcept override
-    {
-        std::cout << "DerivedClass::DoSomething() called on " << this << '\n';
-    }
+    virtual void DoSomething() const noexcept override { std::cout << "DerivedClass::DoSomething() called on " << this << '\n'; }
 
-    virtual void DoSomethingElse() const noexcept override
-    {
-        std::cout << "DerivedClass::DoSomethingElse() called on " << this << '\n';
-    }
+    virtual void DoSomethingElse() const noexcept override { std::cout << "DerivedClass::DoSomethingElse() called on " << this << '\n'; }
 };
 
 int main(int argc, char** argv)

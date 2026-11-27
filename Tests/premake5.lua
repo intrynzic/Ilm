@@ -11,6 +11,8 @@ workspace "Tests"
 
     solutionitems
     {
+        "../.clang-format",
+        "../.clang-tidy",
         "../.editorconfig"
     }
 

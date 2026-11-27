@@ -55,50 +55,52 @@ ILM_NAMESPACE_BEGIN
 // Internal constraints
 // ---------------------------------------------------------------------------
 
-// _Ty2 is the same class as, or is derived from, _Base.
-// Deliberately identical to the old std::is_base_of_v<_Base, _Ty2> constraint
+// T2 is the same class as, or is derived from, Base.
+// Deliberately identical to the old std::is_base_of_v<Base, T2> constraint
 // (NOTE: not std::derived_from, which additionally demands public, unambiguous inheritance).
-// Usage: template<_DerivedFrom<_Ty> _Ty2> means _Ty2 must derive from _Ty.
-template <typename _Ty2, typename _Base>
-concept _DerivedFrom = std::is_base_of_v<_Base, _Ty2>;
+// Usage: template<_DerivedFrom<T> T2> means T2 must derive from T.
+template <typename T2, typename Base>
+concept _DerivedFrom = std::is_base_of_v<Base, T2>;
 
 // Gates operator-> / operator* so that Ref<void> / Scope<void> remain usable.
-template <typename _Ty>
-concept _NonVoid = !std::is_void_v<_Ty>;
+template <typename T>
+concept _NonVoid = !std::is_void_v<T>;
 
 // Gates CreateScope / CreateRef (array types are not supported yet).
 // TODO(Adam): Add support for arrays!
-template <typename _Ty>
-concept _NonArray = !std::is_array_v<_Ty>;
+template <typename T>
+concept _NonArray = !std::is_array_v<T>;
 
-// _Base is _Ty2 with const added. Only for non-class types such as int, because std::is_base_of is
+// Base is T2 with const added. Only for non-class types such as int, because std::is_base_of is
 // always false for those so _DerivedFrom cannot express it (class types are covered by _DerivedFrom).
-// Usage: template<_AddsConst<_Ty> _Ty2> means _Ty must be const _Ty2
-template <typename _Ty2, typename _Base>
-concept _AddsConst = !std::is_class_v<_Ty2> && !std::is_const_v<_Ty2> && std::is_same_v<const _Ty2, _Base>;
+// Usage: template<_AddsConst<T> T2> means T must be const T2
+template <typename T2, typename Base>
+concept _AddsConst = !std::is_class_v<T2> && !std::is_const_v<T2> && std::is_same_v<const T2, Base>;
 
-ILM_EXPORT template <typename _Ty>
+ILM_EXPORT template <typename T>
 class Scope
 {
 public:
-    constexpr explicit Scope(_Ty* ptr) noexcept
-        : m_Ptr(ptr), m_Deleter(&_DefaultDelete<_Ty>) { };
+    constexpr explicit Scope(T* ptr) noexcept
+        : m_Ptr(ptr), m_Deleter(&_DefaultDelete<T>) { };
 
-    template <_DerivedFrom<_Ty> _Ty2>
-    constexpr explicit Scope(_Ty2* ptr) noexcept
-        : m_Ptr(ptr), m_Deleter(&_DefaultDelete<_Ty2>) { };
+    template <_DerivedFrom<T> T2>
+    constexpr explicit Scope(T2* ptr) noexcept
+        : m_Ptr(ptr), m_Deleter(&_DefaultDelete<T2>) { };
 
-    template <_DerivedFrom<_Ty> _Ty2>
-    constexpr Scope(Scope<_Ty2>&& scope) noexcept
+    template <_DerivedFrom<T> T2>
+    constexpr Scope(Scope<T2>&& scope) noexcept
         : m_Ptr(scope.Release()), m_Deleter(std::exchange(scope.m_Deleter, nullptr)) { };
 
-    constexpr Scope(Scope<_Ty>&& scope) noexcept
+    constexpr Scope(Scope<T>&& scope) noexcept
         : m_Ptr(scope.Release()), m_Deleter(std::exchange(scope.m_Deleter, nullptr)) { };
 
-    Scope(Scope<_Ty>&)       = delete;
-    Scope(const Scope<_Ty>&) = delete;
+    Scope(Scope<T>&)       = delete;
+    Scope(const Scope<T>&) = delete;
+
     constexpr Scope(std::nullptr_t) noexcept
         : m_Ptr(nullptr), m_Deleter(nullptr) { };
+
     constexpr Scope() noexcept = default;
 
     constexpr ~Scope() noexcept
@@ -112,7 +114,7 @@ public:
         }
     }
 
-    constexpr void Swap(Scope<_Ty>& other) noexcept
+    constexpr void Swap(Scope<T>& other) noexcept
     {
         if (this != &other)
         {
@@ -121,84 +123,84 @@ public:
         }
     }
 
-    template <_DerivedFrom<_Ty> _Ty2>
-    constexpr void Reset(_Ty2* newPtr) noexcept
+    template <_DerivedFrom<T> T2>
+    constexpr void Reset(T2* newPtr) noexcept
     {
-        Scope<_Ty2>(newPtr).Swap(*this);
+        Scope<T2>(newPtr).Swap(*this);
     }
 
-    constexpr void Reset(_Ty* newPtr) noexcept { Scope<_Ty>(newPtr).Swap(*this); }
+    constexpr void Reset(T* newPtr) noexcept { Scope<T>(newPtr).Swap(*this); }
 
-    constexpr void Reset() noexcept { Scope<_Ty>(nullptr).Swap(*this); }
+    constexpr void Reset() noexcept { Scope<T>(nullptr).Swap(*this); }
 
-    constexpr _Ty* Release() noexcept { return std::exchange(m_Ptr, nullptr); }
+    constexpr T* Release() noexcept { return std::exchange(m_Ptr, nullptr); }
 
-    constexpr _Ty* Raw() const noexcept { return m_Ptr; }
+    constexpr T* Raw() const noexcept { return m_Ptr; }
 
     constexpr bool Valid() const noexcept { return Raw() != nullptr; }
 
     constexpr explicit operator bool() const noexcept { return Valid(); }
 
-    Scope<_Ty>& operator=(Scope<_Ty>&)       = delete;
-    Scope<_Ty>& operator=(const Scope<_Ty>&) = delete;
+    Scope<T>& operator=(Scope<T>&)       = delete;
+    Scope<T>& operator=(const Scope<T>&) = delete;
 
-    constexpr Scope<_Ty>& operator=(Scope<_Ty>&& other) noexcept
+    constexpr Scope<T>& operator=(Scope<T>&& other) noexcept
     {
-        Scope<_Ty>(std::move(other)).Swap(*this);
+        Scope<T>(std::move(other)).Swap(*this);
         return *this;
     }
 
-    template <_DerivedFrom<_Ty> _Ty2>
-    constexpr Scope<_Ty>& operator=(Scope<_Ty2>&& other) noexcept
+    template <_DerivedFrom<T> T2>
+    constexpr Scope<T>& operator=(Scope<T2>&& other) noexcept
     {
-        Scope<_Ty>(std::move(other)).Swap(*this);
+        Scope<T>(std::move(other)).Swap(*this);
         return *this;
     }
 
-    constexpr Scope<_Ty>& operator=(std::nullptr_t) noexcept
+    constexpr Scope<T>& operator=(std::nullptr_t) noexcept
     {
-        Scope<_Ty>(nullptr).Swap(*this);
+        Scope<T>(nullptr).Swap(*this);
         return *this;
     }
 
-    constexpr _Ty* operator->() const noexcept
-        requires _NonVoid<_Ty>
+    constexpr T* operator->() const noexcept
+        requires _NonVoid<T>
     {
         return Raw();
     }
 
-    constexpr std::add_lvalue_reference_t<_Ty> operator*() const noexcept
-        requires _NonVoid<_Ty>
+    constexpr std::add_lvalue_reference_t<T> operator*() const noexcept
+        requires _NonVoid<T>
     {
         return *Raw();
     }
 
 private:
-    template <typename _Ty2>
+    template <typename T2>
     static void _DefaultDelete(void* ptr) noexcept
     {
-        delete static_cast<_Ty2*>(ptr);
+        delete static_cast<T2*>(ptr);
     }
 
 private:
-    template <typename _Ty2>
+    template <typename T2>
     friend class Scope;
 
 private:
-    _Ty* m_Ptr               = nullptr;
+    T* m_Ptr               = nullptr;
     void (*m_Deleter)(void*) = nullptr;  // Type-erased deleter
 };
 
-ILM_EXPORT template <_NonArray _Ty, typename... _Args>
-constexpr Scope<_Ty> CreateScope(_Args&&... args) noexcept
+ILM_EXPORT template <_NonArray T, typename... Args>
+constexpr Scope<T> CreateScope(Args&&... args) noexcept
 {
-    return Scope<_Ty>(new _Ty(std::forward<_Args>(args)...));
+    return Scope<T>(new T(std::forward<Args>(args)...));
 }
 
-ILM_EXPORT template <typename _WantedType, typename _ScopeType>
-_WantedType* GetScopeBaseTypePtr(const Scope<_ScopeType>& scope) noexcept
+ILM_EXPORT template <typename Wanted, typename T>
+Wanted* GetScopeBaseTypePtr(const Scope<T>& scope) noexcept
 {
-    return static_cast<_WantedType*>(scope.Raw());
+    return static_cast<Wanted*>(scope.Raw());
 }
 
 class _AtomicRefCount
@@ -227,15 +229,15 @@ private:
     std::atomic_uint m_Weaks   = 0;
 };
 
-template <typename _Ty>
+template <typename T>
 class Ref;
 
-template <typename _Ty>
+template <typename T>
 class WeakRef;
 
 // Base class for Ref, UnsafeRef and WeakRef
 // std::remove_extent<> will need to be used in future to support array types.
-template <typename _Ty>
+template <typename T>
 class _RefBase
 {
 protected:
@@ -246,15 +248,15 @@ protected:
     constexpr ~_RefBase() noexcept = default;
 
 public:
-    _RefBase(const _RefBase<_Ty>&)                 = delete;
-    _RefBase<_Ty>& operator=(const _RefBase<_Ty>&) = delete;
+    _RefBase(const _RefBase<T>&)                 = delete;
+    _RefBase<T>& operator=(const _RefBase<T>&) = delete;
 
 protected:
-    constexpr _Ty* _Raw() const noexcept { return m_Ptr; }
+    constexpr T* _Raw() const noexcept { return m_Ptr; }
 
-    constexpr _Ty* _ReleaseRaw() noexcept { return std::exchange(m_Ptr, nullptr); }
+    constexpr T* _ReleaseRaw() noexcept { return std::exchange(m_Ptr, nullptr); }
 
-    constexpr void _Swap(_RefBase<_Ty>& other) noexcept
+    constexpr void _Swap(_RefBase<T>& other) noexcept
     {
         std::swap(m_Ptr, other.m_Ptr);
         std::swap(m_RefCount, other.m_RefCount);
@@ -306,18 +308,18 @@ protected:
         }
     }
 
-    template <typename _Ty2>
-    constexpr void _ConstructFromRaw(_Ty2* ptr) noexcept
+    template <typename T2>
+    constexpr void _ConstructFromRaw(T2* ptr) noexcept
     {
-        m_Ptr      = static_cast<_Ty*>(ptr);
+        m_Ptr      = static_cast<T*>(ptr);
         m_RefCount = m_Ptr ? new _AtomicRefCount() : nullptr;
-        m_Deleter  = m_Ptr ? &_DefaultDelete<_Ty2> : nullptr;
+        m_Deleter  = m_Ptr ? &_DefaultDelete<T2> : nullptr;
     }
 
-    template <typename _Ty2, typename _Ty3>
-    constexpr void _AliasConstructFrom(_Ty2* ptr, const Ref<_Ty3>& ref) noexcept
+    template <typename T2, typename T3>
+    constexpr void _AliasConstructFrom(T2* ptr, const Ref<T3>& ref) noexcept
     {
-        m_Ptr      = static_cast<_Ty*>(ptr);
+        m_Ptr      = static_cast<T*>(ptr);
         m_RefCount = ref.m_RefCount;
         m_Deleter  = ref.m_Deleter;
 
@@ -326,10 +328,10 @@ protected:
             _IncRef();
     }
 
-    template <typename _Ty2, typename _Ty3>
-    constexpr void _MoveAliasConstructFrom(_Ty2* ptr, Ref<_Ty3>&& ref) noexcept
+    template <typename T2, typename T3>
+    constexpr void _MoveAliasConstructFrom(T2* ptr, Ref<T3>&& ref) noexcept
     {
-        m_Ptr      = static_cast<_Ty*>(ptr);
+        m_Ptr      = static_cast<T*>(ptr);
         m_RefCount = ref.m_RefCount;
         m_Deleter  = ref.m_Deleter;
 
@@ -338,10 +340,10 @@ protected:
         ref.m_Deleter  = nullptr;
     }
 
-    template <typename _Ty2>
-    constexpr void _MoveConstructFrom(_RefBase<_Ty2>&& ptr) noexcept
+    template <typename T2>
+    constexpr void _MoveConstructFrom(_RefBase<T2>&& ptr) noexcept
     {
-        m_Ptr      = static_cast<_Ty*>(ptr.m_Ptr);
+        m_Ptr      = static_cast<T*>(ptr.m_Ptr);
         m_RefCount = ptr.m_RefCount;
         m_Deleter  = ptr.m_Deleter;
 
@@ -350,28 +352,28 @@ protected:
         ptr.m_Deleter  = nullptr;
     }
 
-    template <typename _Ty2>
-    constexpr void _CopyConstructFrom(const Ref<_Ty2>& ref) noexcept
+    template <typename T2>
+    constexpr void _CopyConstructFrom(const Ref<T2>& ref) noexcept
     {
-        m_Ptr      = static_cast<_Ty*>(ref.m_Ptr);
+        m_Ptr      = static_cast<T*>(ref.m_Ptr);
         m_RefCount = ref.m_RefCount;
         m_Deleter  = ref.m_Deleter;
 
         _IncRef();
     }
 
-    template <typename _Ty2>
-    constexpr void _WeaklyConstructFrom(const _RefBase<_Ty2>& ptr) noexcept
+    template <typename T2>
+    constexpr void _WeaklyConstructFrom(const _RefBase<T2>& ptr) noexcept
     {
-        m_Ptr      = static_cast<_Ty*>(ptr.m_Ptr);
+        m_Ptr      = static_cast<T*>(ptr.m_Ptr);
         m_RefCount = ptr.m_RefCount;
         m_Deleter  = ptr.m_Deleter;
 
         _IncWeakRef();
     }
 
-    template <typename _Ty2>
-    constexpr void _ConstructFromWeak(const WeakRef<_Ty2>& weak) noexcept
+    template <typename T2>
+    constexpr void _ConstructFromWeak(const WeakRef<T2>& weak) noexcept
     {
         // We cannot create a strong reference to the resource if it was already deleted
         if (weak._RefCount() == 0)
@@ -382,121 +384,121 @@ protected:
             return;
         }
 
-        m_Ptr      = static_cast<_Ty*>(weak.m_Ptr);
+        m_Ptr      = static_cast<T*>(weak.m_Ptr);
         m_RefCount = weak.m_RefCount;
         m_Deleter  = weak.m_Deleter;
 
         _IncRef();
     }
 
-    template <typename _Ty2>
-    constexpr void _UnsafelyConstructFrom(const _RefBase<_Ty2>& ptr) noexcept
+    template <typename T2>
+    constexpr void _UnsafelyConstructFrom(const _RefBase<T2>& ptr) noexcept
     {
-        m_Ptr      = static_cast<_Ty*>(ptr.m_Ptr);
+        m_Ptr      = static_cast<T*>(ptr.m_Ptr);
         m_RefCount = ptr.m_RefCount;
         m_Deleter  = ptr.m_Deleter;
     }
 
 private:
-    template <typename _Ty2>
+    template <typename T2>
     static void _DefaultDelete(void* ptr) noexcept
     {
-        delete static_cast<_Ty2*>(ptr);
+        delete static_cast<T2*>(ptr);
     }
 
 private:
-    _Ty* m_Ptr                  = nullptr;
+    T* m_Ptr                  = nullptr;
     _AtomicRefCount* m_RefCount = nullptr;
     void (*m_Deleter)(void*)    = nullptr;  // Type-erased deleter
 
 private:
-    template <typename _Ty2>
+    template <typename T2>
     friend class _RefBase;
 
-    friend class Ref<_Ty>;
-    friend class WeakRef<_Ty>;
+    friend class Ref<T>;
+    friend class WeakRef<T>;
 };
 
-ILM_EXPORT template <typename _Ty>
-class Ref : public _RefBase<_Ty>
+ILM_EXPORT template <typename T>
+class Ref : public _RefBase<T>
 {
 public:
-    constexpr explicit Ref(_Ty* ptr) noexcept { this->_ConstructFromRaw(ptr); }
+    constexpr explicit Ref(T* ptr) noexcept { this->_ConstructFromRaw(ptr); }
 
-    template <_DerivedFrom<_Ty> _Ty2>
-    constexpr explicit Ref(_Ty2* ptr) noexcept
+    template <_DerivedFrom<T> T2>
+    constexpr explicit Ref(T2* ptr) noexcept
     {
         this->_ConstructFromRaw(ptr);
     }
 
-    template <_DerivedFrom<_Ty> _Ty2>
-    constexpr Ref(const Ref<_Ty2>& ref) noexcept
+    template <_DerivedFrom<T> T2>
+    constexpr Ref(const Ref<T2>& ref) noexcept
     {
         this->_CopyConstructFrom(ref);
     }
 
-    template <_AddsConst<_Ty> _Ty2>
-    constexpr Ref(const Ref<_Ty2>& ref) noexcept
+    template <_AddsConst<T> T2>
+    constexpr Ref(const Ref<T2>& ref) noexcept
     {
         this->_CopyConstructFrom(ref);
     }
 
-    constexpr Ref(const Ref<_Ty>& ref) noexcept { this->_CopyConstructFrom(ref); }
+    constexpr Ref(const Ref<T>& ref) noexcept { this->_CopyConstructFrom(ref); }
 
-    template <typename _Ty2, typename _Ty3>
-    constexpr Ref(_Ty2* newPtr, const Ref<_Ty3>& owner) noexcept
+    template <typename T2, typename T3>
+    constexpr Ref(T2* newPtr, const Ref<T3>& owner) noexcept
     {
         this->_AliasConstructFrom(newPtr, owner);
     }
 
-    template <typename _Ty2, typename _Ty3>
-    constexpr Ref(_Ty2* newPtr, Ref<_Ty3>&& owner) noexcept
+    template <typename T2, typename T3>
+    constexpr Ref(T2* newPtr, Ref<T3>&& owner) noexcept
     {
         this->_MoveAliasConstructFrom(newPtr, std::move(owner));
     }
 
-    template <_DerivedFrom<_Ty> _Ty2>
-    constexpr Ref(Ref<_Ty2>&& ref) noexcept
+    template <_DerivedFrom<T> T2>
+    constexpr Ref(Ref<T2>&& ref) noexcept
     {
         this->_MoveConstructFrom(std::move(ref));
     }
 
-    constexpr Ref(Ref<_Ty>&& ref) noexcept { this->_MoveConstructFrom(std::move(ref)); }
+    constexpr Ref(Ref<T>&& ref) noexcept { this->_MoveConstructFrom(std::move(ref)); }
 
-    template <_DerivedFrom<_Ty> _Ty2>
-    constexpr explicit Ref(const WeakRef<_Ty2>& weak) noexcept
+    template <_DerivedFrom<T> T2>
+    constexpr explicit Ref(const WeakRef<T2>& weak) noexcept
     {
         this->_ConstructFromWeak(weak);
     }
 
-    constexpr explicit Ref(const WeakRef<_Ty>& weak) noexcept { this->_ConstructFromWeak(weak); }
+    constexpr explicit Ref(const WeakRef<T>& weak) noexcept { this->_ConstructFromWeak(weak); }
 
     constexpr Ref(std::nullptr_t) noexcept
-        : _RefBase<_Ty>(nullptr) { };
+        : _RefBase<T>(nullptr) { };
 
     constexpr Ref() noexcept = default;
     constexpr ~Ref() noexcept { this->_DecRef(); }
 
-    constexpr void Swap(Ref<_Ty>& other) noexcept
+    constexpr void Swap(Ref<T>& other) noexcept
     {
         if (this != &other)
             this->_Swap(other);
     }
 
-    template <_DerivedFrom<_Ty> _Ty2>
-    constexpr void Reset(_Ty2* newPtr) noexcept
+    template <_DerivedFrom<T> T2>
+    constexpr void Reset(T2* newPtr) noexcept
     {
-        Ref<_Ty2>(newPtr).Swap(*this);
+        Ref<T2>(newPtr).Swap(*this);
     }
 
-    constexpr void Reset(_Ty* newPtr) noexcept { Ref<_Ty>(newPtr).Swap(*this); }
+    constexpr void Reset(T* newPtr) noexcept { Ref<T>(newPtr).Swap(*this); }
 
-    constexpr void Reset() noexcept { Ref<_Ty>(nullptr).Swap(*this); }
+    constexpr void Reset() noexcept { Ref<T>(nullptr).Swap(*this); }
 
-    constexpr _Ty* Release() noexcept
+    constexpr T* Release() noexcept
     {
-        _Ty* res = this->_ReleaseRaw();
-        Ref<_Ty>(nullptr).Swap(*this);
+        T* res = this->_ReleaseRaw();
+        Ref<T>(nullptr).Swap(*this);
 
         return res;
     }
@@ -505,71 +507,71 @@ public:
 
     bool Unique() const noexcept { return RefCount() == 1; }
 
-    constexpr _Ty* Raw() const noexcept { return this->_Raw(); }
+    constexpr T* Raw() const noexcept { return this->_Raw(); }
 
     constexpr bool Valid() const noexcept { return Raw() != nullptr; }
 
     constexpr explicit operator bool() const noexcept { return Valid(); }
 
-    Ref<_Ty>& operator=(const Ref<_Ty>& other) noexcept
+    Ref<T>& operator=(const Ref<T>& other) noexcept
     {
-        Ref<_Ty>(other).Swap(*this);
+        Ref<T>(other).Swap(*this);
         return *this;
     }
 
-    template <_DerivedFrom<_Ty> _Ty2>
-    constexpr Ref<_Ty>& operator=(const Ref<_Ty2>& other) noexcept
+    template <_DerivedFrom<T> T2>
+    constexpr Ref<T>& operator=(const Ref<T2>& other) noexcept
     {
-        Ref<_Ty>(other).Swap(*this);
+        Ref<T>(other).Swap(*this);
         return *this;
     }
 
-    Ref<_Ty>& operator=(Ref<_Ty>&& other) noexcept
+    Ref<T>& operator=(Ref<T>&& other) noexcept
     {
-        Ref<_Ty>(std::move(other)).Swap(*this);
+        Ref<T>(std::move(other)).Swap(*this);
         return *this;
     }
 
-    template <_DerivedFrom<_Ty> _Ty2>
-    constexpr Ref<_Ty>& operator=(Ref<_Ty2>&& other) noexcept
+    template <_DerivedFrom<T> T2>
+    constexpr Ref<T>& operator=(Ref<T2>&& other) noexcept
     {
-        Ref<_Ty>(std::move(other)).Swap(*this);
+        Ref<T>(std::move(other)).Swap(*this);
         return *this;
     }
 
-    constexpr Ref<_Ty>& operator=(std::nullptr_t) noexcept
+    constexpr Ref<T>& operator=(std::nullptr_t) noexcept
     {
-        Ref<_Ty>(nullptr).Swap(*this);
+        Ref<T>(nullptr).Swap(*this);
         return *this;
     }
 
-    constexpr _Ty* operator->() const noexcept
-        requires _NonVoid<_Ty>
+    constexpr T* operator->() const noexcept
+        requires _NonVoid<T>
     {
         return this->Raw();
     }
 
-    constexpr std::add_lvalue_reference_t<_Ty> operator*() const noexcept
-        requires _NonVoid<_Ty>
+    constexpr std::add_lvalue_reference_t<T> operator*() const noexcept
+        requires _NonVoid<T>
     {
         return *Raw();
     }
 
 private:
-    template <typename _Ty2>
+    template <typename T2>
     friend class Ref;
 };
 
-ILM_EXPORT template <_NonArray _Ty, typename... _Args>
-constexpr Ref<_Ty> CreateRef(_Args&&... args) noexcept
+ILM_EXPORT template <_NonArray T, typename... Args>
+constexpr Ref<T> CreateRef(Args&&... args) noexcept
 {
-    return Ref<_Ty>(new _Ty(std::forward<_Args>(args)...));
+    return Ref<T>(new T(std::forward<Args>(args)...));
 }
 
-ILM_EXPORT template <typename _WantedType, typename _RefType>
-_WantedType* GetRefBaseTypePtr(const Ref<_RefType>& ref) noexcept
+ILM_EXPORT template <typename Wanted, typename T>
+Wanted* GetRefBaseTypePtr(const Ref<T>& ref) noexcept
 {
-    return static_cast<_WantedType*>(ref.Raw());
+    return static_cast<Wanted*>(ref.Raw());
 }
 
 // A non-owning view that grants temporary direct access to reference count
@@ -589,25 +591,25 @@ _WantedType* GetRefBaseTypePtr(const Ref<_RefType>& ref) noexcept
 //    lifetime management. Only cast the magic unsafe spell if you know what you're doing!
 //
 // Use with extreme caution, for this type is dangerous...
-ILM_EXPORT template <typename _Ty>
-class UnsafeRef : public _RefBase<_Ty>
+ILM_EXPORT template <typename T>
+class UnsafeRef : public _RefBase<T>
 {
 public:
-    constexpr UnsafeRef(const Ref<_Ty>& ref) noexcept { this->_UnsafelyConstructFrom(ref); }
+    constexpr UnsafeRef(const Ref<T>& ref) noexcept { this->_UnsafelyConstructFrom(ref); }
 
-    template <_DerivedFrom<_Ty> _Ty2>
-    constexpr UnsafeRef(const Ref<_Ty2>& ref) noexcept
+    template <_DerivedFrom<T> T2>
+    constexpr UnsafeRef(const Ref<T2>& ref) noexcept
     {
         this->_UnsafelyConstructFrom(ref);
     }
 
     constexpr UnsafeRef(std::nullptr_t) noexcept
-        : _RefBase<_Ty>(nullptr) { };
+        : _RefBase<T>(nullptr) { };
 
     constexpr UnsafeRef()  = default;
     constexpr ~UnsafeRef() = default;
 
-    constexpr void Swap(UnsafeRef<_Ty>& other) noexcept
+    constexpr void Swap(UnsafeRef<T>& other) noexcept
     {
         if (this != &other)
             this->_Swap(other);
@@ -627,139 +629,139 @@ public:
 
     constexpr explicit operator bool() const noexcept { return Valid(); }
 
-    constexpr UnsafeRef<_Ty>& operator=(std::nullptr_t) noexcept
+    constexpr UnsafeRef<T>& operator=(std::nullptr_t) noexcept
     {
-        UnsafeRef<_Ty>(nullptr).Swap(*this);
+        UnsafeRef<T>(nullptr).Swap(*this);
         return *this;
     }
 
     // NOTE: To prevent accidental usages, we intentionally deleted the Ref assignment operator overloads.
-    constexpr UnsafeRef<_Ty>& operator=(const Ref<_Ty>&) noexcept = delete;
-    constexpr UnsafeRef<_Ty>& operator=(Ref<_Ty>&&) noexcept      = delete;
+    constexpr UnsafeRef<T>& operator=(const Ref<T>&) noexcept = delete;
+    constexpr UnsafeRef<T>& operator=(Ref<T>&&) noexcept      = delete;
 
 private:
-    template <typename _Ty2>
+    template <typename T2>
     friend class UnsafeRef;
 };
 
 // Unsafe cast and copy
-ILM_EXPORT template <typename _Ty>
-UnsafeRef<_Ty> UnsafeRefCast(const Ref<_Ty>& ref) noexcept
+ILM_EXPORT template <typename T>
+UnsafeRef<T> UnsafeRefCast(const Ref<T>& ref) noexcept
 {
-    return UnsafeRef<_Ty>(ref);
+    return UnsafeRef<T>(ref);
 }
 
 // Static cast and copy
-ILM_EXPORT template <typename _WantedType, typename _RefType>
-Ref<_WantedType> StaticRefCast(const Ref<_RefType>& ref) noexcept
+ILM_EXPORT template <typename Wanted, typename T>
+Ref<Wanted> StaticRefCast(const Ref<T>& ref) noexcept
 {
-    const auto ptr = static_cast<_WantedType*>(ref.Raw());
-    return Ref<_WantedType>(ptr, ref);
+    const auto ptr = static_cast<Wanted*>(ref.Raw());
+    return Ref<Wanted>(ptr, ref);
 }
 
 // Static cast and move
-ILM_EXPORT template <typename _WantedType, typename _RefType>
-Ref<_WantedType> StaticRefCast(Ref<_RefType>&& ref) noexcept
+ILM_EXPORT template <typename Wanted, typename T>
+Ref<Wanted> StaticRefCast(Ref<T>&& ref) noexcept
 {
-    const auto ptr = static_cast<_WantedType*>(ref.Raw());
-    return Ref<_WantedType>(ptr, std::move(ref));
+    const auto ptr = static_cast<Wanted*>(ref.Raw());
+    return Ref<Wanted>(ptr, std::move(ref));
 }
 
 // Dynamic cast and copy
-ILM_EXPORT template <typename _WantedType, typename _RefType>
-Ref<_WantedType> DynamicRefCast(const Ref<_RefType>& ref) noexcept
+ILM_EXPORT template <typename Wanted, typename T>
+Ref<Wanted> DynamicRefCast(const Ref<T>& ref) noexcept
 {
-    const auto ptr = dynamic_cast<_WantedType*>(ref.Raw());
-    return Ref<_WantedType>(ptr, ref);
+    const auto ptr = dynamic_cast<Wanted*>(ref.Raw());
+    return Ref<Wanted>(ptr, ref);
 }
 
 // Dynamic cast and move
-ILM_EXPORT template <typename _WantedType, typename _RefType>
-Ref<_WantedType> DynamicRefCast(Ref<_RefType>&& ref) noexcept
+ILM_EXPORT template <typename Wanted, typename T>
+Ref<Wanted> DynamicRefCast(Ref<T>&& ref) noexcept
 {
-    const auto ptr = dynamic_cast<_WantedType*>(ref.Raw());
-    return Ref<_WantedType>(ptr, std::move(ref));
+    const auto ptr = dynamic_cast<Wanted*>(ref.Raw());
+    return Ref<Wanted>(ptr, std::move(ref));
 }
 
 // Reinterpret cast and copy
-ILM_EXPORT template <typename _WantedType, typename _RefType>
-Ref<_WantedType> ReinterpretRefCast(const Ref<_RefType>& ref) noexcept
+ILM_EXPORT template <typename Wanted, typename T>
+Ref<Wanted> ReinterpretRefCast(const Ref<T>& ref) noexcept
 {
-    const auto ptr = reinterpret_cast<_WantedType*>(ref.Raw());
-    return Ref<_WantedType>(ptr, ref);
+    const auto ptr = reinterpret_cast<Wanted*>(ref.Raw());
+    return Ref<Wanted>(ptr, ref);
 }
 
 // Reinterpret cast and move
-ILM_EXPORT template <typename _WantedType, typename _RefType>
-Ref<_WantedType> ReinterpretRefCast(Ref<_RefType>&& ref) noexcept
+ILM_EXPORT template <typename Wanted, typename T>
+Ref<Wanted> ReinterpretRefCast(Ref<T>&& ref) noexcept
 {
-    const auto ptr = reinterpret_cast<_WantedType*>(ref.Raw());
-    return Ref<_WantedType>(ptr, std::move(ref));
+    const auto ptr = reinterpret_cast<Wanted*>(ref.Raw());
+    return Ref<Wanted>(ptr, std::move(ref));
 }
 
 // Const cast and copy
-ILM_EXPORT template <typename _WantedType, typename _RefType>
-Ref<_WantedType> ConstRefCast(const Ref<_RefType>& ref) noexcept
+ILM_EXPORT template <typename Wanted, typename T>
+Ref<Wanted> ConstRefCast(const Ref<T>& ref) noexcept
 {
-    const auto ptr = const_cast<_WantedType*>(ref.Raw());
-    return Ref<_WantedType>(ptr, ref);
+    const auto ptr = const_cast<Wanted*>(ref.Raw());
+    return Ref<Wanted>(ptr, ref);
 }
 
 // Const cast and move
-ILM_EXPORT template <typename _WantedType, typename _RefType>
-Ref<_WantedType> ConstRefCast(Ref<_RefType>&& ref) noexcept
+ILM_EXPORT template <typename Wanted, typename T>
+Ref<Wanted> ConstRefCast(Ref<T>&& ref) noexcept
 {
-    const auto ptr = const_cast<_WantedType*>(ref.Raw());
-    return Ref<_WantedType>(ptr, std::move(ref));
+    const auto ptr = const_cast<Wanted*>(ref.Raw());
+    return Ref<Wanted>(ptr, std::move(ref));
 }
 
-ILM_EXPORT template <typename _Ty>
-class WeakRef : public _RefBase<_Ty>
+ILM_EXPORT template <typename T>
+class WeakRef : public _RefBase<T>
 {
 public:
-    constexpr WeakRef(const Ref<_Ty>& ref) noexcept { this->_WeaklyConstructFrom(ref); }
+    constexpr WeakRef(const Ref<T>& ref) noexcept { this->_WeaklyConstructFrom(ref); }
 
-    template <_DerivedFrom<_Ty> _Ty2>
-    constexpr WeakRef(const Ref<_Ty2>& ref) noexcept
+    template <_DerivedFrom<T> T2>
+    constexpr WeakRef(const Ref<T2>& ref) noexcept
     {
         this->_WeaklyConstructFrom(ref);
     }
 
-    template <_DerivedFrom<_Ty> _Ty2>
-    constexpr WeakRef(const WeakRef<_Ty2>& weakRef) noexcept
+    template <_DerivedFrom<T> T2>
+    constexpr WeakRef(const WeakRef<T2>& weakRef) noexcept
     {
         this->_WeaklyConstructFrom(weakRef);
     }
 
-    template <_AddsConst<_Ty> _Ty2>
-    constexpr WeakRef(const WeakRef<_Ty2>& weakRef) noexcept
+    template <_AddsConst<T> T2>
+    constexpr WeakRef(const WeakRef<T2>& weakRef) noexcept
     {
         this->_WeaklyConstructFrom(weakRef);
     }
 
-    constexpr WeakRef(const WeakRef<_Ty>& weakRef) noexcept { this->_WeaklyConstructFrom(weakRef); }
+    constexpr WeakRef(const WeakRef<T>& weakRef) noexcept { this->_WeaklyConstructFrom(weakRef); }
 
-    template <_DerivedFrom<_Ty> _Ty2>
-    constexpr WeakRef(WeakRef<_Ty2>&& weakRef) noexcept
+    template <_DerivedFrom<T> T2>
+    constexpr WeakRef(WeakRef<T2>&& weakRef) noexcept
     {
         this->_MoveConstructFrom(std::move(weakRef));
     }
 
-    constexpr WeakRef(WeakRef<_Ty>&& weakRef) noexcept { this->_MoveConstructFrom(std::move(weakRef)); }
+    constexpr WeakRef(WeakRef<T>&& weakRef) noexcept { this->_MoveConstructFrom(std::move(weakRef)); }
 
     constexpr WeakRef(std::nullptr_t) noexcept
-        : _RefBase<_Ty>(nullptr) { };
+        : _RefBase<T>(nullptr) { };
 
     constexpr WeakRef() noexcept = default;
     constexpr ~WeakRef() noexcept { this->_DecWeakRef(); }
 
-    constexpr void Swap(WeakRef<_Ty>& other) noexcept
+    constexpr void Swap(WeakRef<T>& other) noexcept
     {
         if (this != &other)
             this->_Swap(other);
     }
 
-    constexpr void Reset() noexcept { WeakRef<_Ty>(nullptr).Swap(*this); }
+    constexpr void Reset() noexcept { WeakRef<T>(nullptr).Swap(*this); }
 
     uint32_t RefCount() const noexcept { return this->_RefCount(); }
 
@@ -767,440 +769,440 @@ public:
 
     bool Expired() const noexcept { return RefCount() == 0; }
 
-    constexpr _Ty* Raw() const noexcept { return this->_Raw(); }
+    constexpr T* Raw() const noexcept { return this->_Raw(); }
 
     constexpr bool Valid() const noexcept { return Raw() != nullptr; }
 
-    Ref<_Ty> Lock() const noexcept { return Expired() ? nullptr : Ref<_Ty>(*this); }
+    Ref<T> Lock() const noexcept { return Expired() ? nullptr : Ref<T>(*this); }
 
     constexpr explicit operator bool() const noexcept { return Valid(); }
 
-    WeakRef<_Ty>& operator=(const WeakRef<_Ty>& other) noexcept
+    WeakRef<T>& operator=(const WeakRef<T>& other) noexcept
     {
-        WeakRef<_Ty>(other).Swap(*this);
+        WeakRef<T>(other).Swap(*this);
         return *this;
     }
 
-    template <_DerivedFrom<_Ty> _Ty2>
-    constexpr WeakRef<_Ty>& operator=(const WeakRef<_Ty2>& other) noexcept
+    template <_DerivedFrom<T> T2>
+    constexpr WeakRef<T>& operator=(const WeakRef<T2>& other) noexcept
     {
-        WeakRef<_Ty>(other).Swap(*this);
+        WeakRef<T>(other).Swap(*this);
         return *this;
     }
 
-    WeakRef<_Ty>& operator=(WeakRef<_Ty>&& other) noexcept
+    WeakRef<T>& operator=(WeakRef<T>&& other) noexcept
     {
-        WeakRef<_Ty>(std::move(other)).Swap(*this);
+        WeakRef<T>(std::move(other)).Swap(*this);
         return *this;
     }
 
-    template <_DerivedFrom<_Ty> _Ty2>
-    constexpr WeakRef<_Ty>& operator=(WeakRef<_Ty2>&& other) noexcept
+    template <_DerivedFrom<T> T2>
+    constexpr WeakRef<T>& operator=(WeakRef<T2>&& other) noexcept
     {
-        WeakRef<_Ty>(std::move(other)).Swap(*this);
+        WeakRef<T>(std::move(other)).Swap(*this);
         return *this;
     }
 
-    WeakRef<_Ty>& operator=(const Ref<_Ty>& ref) noexcept
+    WeakRef<T>& operator=(const Ref<T>& ref) noexcept
     {
-        WeakRef<_Ty>(ref).Swap(*this);
+        WeakRef<T>(ref).Swap(*this);
         return *this;
     }
 
-    template <_DerivedFrom<_Ty> _Ty2>
-    constexpr WeakRef<_Ty>& operator=(const Ref<_Ty2>& ref) noexcept
+    template <_DerivedFrom<T> T2>
+    constexpr WeakRef<T>& operator=(const Ref<T2>& ref) noexcept
     {
-        WeakRef<_Ty>(ref).Swap(*this);
+        WeakRef<T>(ref).Swap(*this);
         return *this;
     }
 
-    constexpr WeakRef<_Ty>& operator=(std::nullptr_t) noexcept
+    constexpr WeakRef<T>& operator=(std::nullptr_t) noexcept
     {
-        WeakRef<_Ty>(nullptr).Swap(*this);
+        WeakRef<T>(nullptr).Swap(*this);
         return *this;
     }
 
 private:
-    template <typename _Ty2>
+    template <typename T2>
     friend class WeakRef;
 };
 
-ILM_EXPORT template <typename _Elem, typename _Traits, typename _Ty>
-std::basic_ostream<_Elem, _Traits>& operator<<(std::basic_ostream<_Elem, _Traits>& ostream, const Scope<_Ty>& ptr)
+ILM_EXPORT template <typename _Elem, typename _Traits, typename T>
+std::basic_ostream<_Elem, _Traits>& operator<<(std::basic_ostream<_Elem, _Traits>& ostream, const Scope<T>& ptr)
 {
     return ostream << ptr.Raw();
 }
 
-ILM_EXPORT template <typename _Elem, typename _Traits, typename _Ty>
-std::basic_ostream<_Elem, _Traits>& operator<<(std::basic_ostream<_Elem, _Traits>& ostream, const Ref<_Ty>& ptr)
+ILM_EXPORT template <typename _Elem, typename _Traits, typename T>
+std::basic_ostream<_Elem, _Traits>& operator<<(std::basic_ostream<_Elem, _Traits>& ostream, const Ref<T>& ptr)
 {
     return ostream << ptr.Raw();
 }
 
-ILM_EXPORT template <typename _Elem, typename _Traits, typename _Ty>
-std::basic_ostream<_Elem, _Traits>& operator<<(std::basic_ostream<_Elem, _Traits>& ostream, const WeakRef<_Ty>& ptr)
+ILM_EXPORT template <typename _Elem, typename _Traits, typename T>
+std::basic_ostream<_Elem, _Traits>& operator<<(std::basic_ostream<_Elem, _Traits>& ostream, const WeakRef<T>& ptr)
 {
     return ostream << ptr.Raw();
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator==(const Ref<_Ty1>& left, const Ref<_Ty2>& right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator==(const Ref<T1>& left, const Ref<T2>& right) noexcept
 {
     return left.Raw() == right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator==(const Ref<_Ty1>& left, _Ty2* right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator==(const Ref<T1>& left, T2* right) noexcept
 {
     return left.Raw() == right;
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator==(_Ty1* left, const Ref<_Ty2> right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator==(T1* left, const Ref<T2> right) noexcept
 {
     return left == right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty>
-bool operator==(const Ref<_Ty>& left, std::nullptr_t) noexcept
+ILM_EXPORT template <typename T>
+bool operator==(const Ref<T>& left, std::nullptr_t) noexcept
 {
     return left.Raw() == nullptr;
 }
 
-ILM_EXPORT template <typename _Ty>
-bool operator==(std::nullptr_t, const Ref<_Ty>& right) noexcept
+ILM_EXPORT template <typename T>
+bool operator==(std::nullptr_t, const Ref<T>& right) noexcept
 {
     return nullptr == right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator!=(const Ref<_Ty1>& left, const Ref<_Ty2>& right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator!=(const Ref<T1>& left, const Ref<T2>& right) noexcept
 {
     return left.Raw() != right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator!=(const Ref<_Ty1>& left, _Ty2* right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator!=(const Ref<T1>& left, T2* right) noexcept
 {
     return left.Raw() != right;
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator!=(_Ty1* left, const Ref<_Ty2>& right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator!=(T1* left, const Ref<T2>& right) noexcept
 {
     return left != right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty>
-bool operator!=(const Ref<_Ty>& left, std::nullptr_t) noexcept
+ILM_EXPORT template <typename T>
+bool operator!=(const Ref<T>& left, std::nullptr_t) noexcept
 {
     return left.Raw() != nullptr;
 }
 
-ILM_EXPORT template <typename _Ty>
-bool operator!=(std::nullptr_t, const Ref<_Ty>& right) noexcept
+ILM_EXPORT template <typename T>
+bool operator!=(std::nullptr_t, const Ref<T>& right) noexcept
 {
     return nullptr != right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator<(const Ref<_Ty1>& left, const Ref<_Ty2>& right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator<(const Ref<T1>& left, const Ref<T2>& right) noexcept
 {
     return left.Raw() < right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator<(const Ref<_Ty1>& left, _Ty2* right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator<(const Ref<T1>& left, T2* right) noexcept
 {
     return left.Raw() < right;
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator<(_Ty1* left, const Ref<_Ty2>& right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator<(T1* left, const Ref<T2>& right) noexcept
 {
     return left < right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty>
-bool operator<(const Ref<_Ty>& left, std::nullptr_t) noexcept
+ILM_EXPORT template <typename T>
+bool operator<(const Ref<T>& left, std::nullptr_t) noexcept
 {
-    return left.Raw() < static_cast<_Ty*>(nullptr);
+    return left.Raw() < static_cast<T*>(nullptr);
 }
 
-ILM_EXPORT template <typename _Ty>
-bool operator<(std::nullptr_t, const Ref<_Ty>& right) noexcept
+ILM_EXPORT template <typename T>
+bool operator<(std::nullptr_t, const Ref<T>& right) noexcept
 {
-    return static_cast<_Ty*>(nullptr) < right.Raw();
+    return static_cast<T*>(nullptr) < right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator<=(const Ref<_Ty1>& left, const Ref<_Ty2>& right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator<=(const Ref<T1>& left, const Ref<T2>& right) noexcept
 {
     return left.Raw() <= right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator<=(const Ref<_Ty1>& left, _Ty2* right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator<=(const Ref<T1>& left, T2* right) noexcept
 {
     return left.Raw() <= right;
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator<=(_Ty1* left, const Ref<_Ty2>& right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator<=(T1* left, const Ref<T2>& right) noexcept
 {
     return left <= right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty>
-bool operator<=(const Ref<_Ty>& left, std::nullptr_t) noexcept
+ILM_EXPORT template <typename T>
+bool operator<=(const Ref<T>& left, std::nullptr_t) noexcept
 {
-    return left.Raw() <= static_cast<_Ty*>(nullptr);
+    return left.Raw() <= static_cast<T*>(nullptr);
 }
 
-ILM_EXPORT template <typename _Ty>
-bool operator<=(std::nullptr_t, const Ref<_Ty>& right) noexcept
+ILM_EXPORT template <typename T>
+bool operator<=(std::nullptr_t, const Ref<T>& right) noexcept
 {
-    return static_cast<_Ty*>(nullptr) <= right.Raw();
+    return static_cast<T*>(nullptr) <= right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator>(const Ref<_Ty1>& left, const Ref<_Ty2>& right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator>(const Ref<T1>& left, const Ref<T2>& right) noexcept
 {
     return left.Raw() > right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator>(const Ref<_Ty1>& left, _Ty2* right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator>(const Ref<T1>& left, T2* right) noexcept
 {
     return left.Raw() > right;
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator>(_Ty1* left, const Ref<_Ty2>& right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator>(T1* left, const Ref<T2>& right) noexcept
 {
     return left > right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty>
-bool operator>(const Ref<_Ty>& left, std::nullptr_t) noexcept
+ILM_EXPORT template <typename T>
+bool operator>(const Ref<T>& left, std::nullptr_t) noexcept
 {
-    return left.Raw() > static_cast<_Ty*>(nullptr);
+    return left.Raw() > static_cast<T*>(nullptr);
 }
 
-ILM_EXPORT template <typename _Ty>
-bool operator>(std::nullptr_t, const Ref<_Ty>& right) noexcept
+ILM_EXPORT template <typename T>
+bool operator>(std::nullptr_t, const Ref<T>& right) noexcept
 {
-    return static_cast<_Ty*>(nullptr) > right.Raw();
+    return static_cast<T*>(nullptr) > right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator>=(const Ref<_Ty1>& left, const Ref<_Ty2>& right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator>=(const Ref<T1>& left, const Ref<T2>& right) noexcept
 {
     return left.Raw() >= right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator>=(const Ref<_Ty1>& left, _Ty2* right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator>=(const Ref<T1>& left, T2* right) noexcept
 {
     return left.Raw() >= right;
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator>=(_Ty1* left, const Ref<_Ty2>& right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator>=(T1* left, const Ref<T2>& right) noexcept
 {
     return left >= right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty>
-bool operator>=(const Ref<_Ty>& left, std::nullptr_t) noexcept
+ILM_EXPORT template <typename T>
+bool operator>=(const Ref<T>& left, std::nullptr_t) noexcept
 {
-    return left.Raw() >= static_cast<_Ty*>(nullptr);
+    return left.Raw() >= static_cast<T*>(nullptr);
 }
 
-ILM_EXPORT template <typename _Ty>
-bool operator>=(std::nullptr_t, const Ref<_Ty>& right) noexcept
+ILM_EXPORT template <typename T>
+bool operator>=(std::nullptr_t, const Ref<T>& right) noexcept
 {
-    return static_cast<_Ty*>(nullptr) >= right.Raw();
+    return static_cast<T*>(nullptr) >= right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator==(const WeakRef<_Ty1>& left, const WeakRef<_Ty2>& right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator==(const WeakRef<T1>& left, const WeakRef<T2>& right) noexcept
 {
     return left.Raw() == right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator==(const WeakRef<_Ty1>& left, _Ty2* right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator==(const WeakRef<T1>& left, T2* right) noexcept
 {
     return left.Raw() == right;
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator==(_Ty1* left, const WeakRef<_Ty2> right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator==(T1* left, const WeakRef<T2> right) noexcept
 {
     return left == right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty>
-bool operator==(const WeakRef<_Ty>& left, std::nullptr_t) noexcept
+ILM_EXPORT template <typename T>
+bool operator==(const WeakRef<T>& left, std::nullptr_t) noexcept
 {
     return left.Raw() == nullptr;
 }
 
-ILM_EXPORT template <typename _Ty>
-bool operator==(std::nullptr_t, const WeakRef<_Ty>& right) noexcept
+ILM_EXPORT template <typename T>
+bool operator==(std::nullptr_t, const WeakRef<T>& right) noexcept
 {
     return nullptr == right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator!=(const WeakRef<_Ty1>& left, const WeakRef<_Ty2>& right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator!=(const WeakRef<T1>& left, const WeakRef<T2>& right) noexcept
 {
     return left.Raw() != right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator!=(const WeakRef<_Ty1>& left, _Ty2* right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator!=(const WeakRef<T1>& left, T2* right) noexcept
 {
     return left.Raw() != right;
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator!=(_Ty1* left, const WeakRef<_Ty2>& right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator!=(T1* left, const WeakRef<T2>& right) noexcept
 {
     return left != right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty>
-bool operator!=(const WeakRef<_Ty>& left, std::nullptr_t) noexcept
+ILM_EXPORT template <typename T>
+bool operator!=(const WeakRef<T>& left, std::nullptr_t) noexcept
 {
     return left.Raw() != nullptr;
 }
 
-ILM_EXPORT template <typename _Ty>
-bool operator!=(std::nullptr_t, const WeakRef<_Ty>& right) noexcept
+ILM_EXPORT template <typename T>
+bool operator!=(std::nullptr_t, const WeakRef<T>& right) noexcept
 {
     return nullptr != right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator<(const Ref<_Ty1>& left, const WeakRef<_Ty2>& right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator<(const Ref<T1>& left, const WeakRef<T2>& right) noexcept
 {
     return left.Raw() < right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator<(const WeakRef<_Ty1>& left, _Ty2* right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator<(const WeakRef<T1>& left, T2* right) noexcept
 {
     return left.Raw() < right;
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator<(_Ty1* left, const WeakRef<_Ty2>& right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator<(T1* left, const WeakRef<T2>& right) noexcept
 {
     return left < right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty>
-bool operator<(const WeakRef<_Ty>& left, std::nullptr_t) noexcept
+ILM_EXPORT template <typename T>
+bool operator<(const WeakRef<T>& left, std::nullptr_t) noexcept
 {
-    return left.Raw() < static_cast<_Ty*>(nullptr);
+    return left.Raw() < static_cast<T*>(nullptr);
 }
 
-ILM_EXPORT template <typename _Ty>
-bool operator<(std::nullptr_t, const WeakRef<_Ty>& right) noexcept
+ILM_EXPORT template <typename T>
+bool operator<(std::nullptr_t, const WeakRef<T>& right) noexcept
 {
-    return static_cast<_Ty*>(nullptr) < right.Raw();
+    return static_cast<T*>(nullptr) < right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator<=(const WeakRef<_Ty1>& left, const WeakRef<_Ty2>& right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator<=(const WeakRef<T1>& left, const WeakRef<T2>& right) noexcept
 {
     return left.Raw() <= right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator<=(const WeakRef<_Ty1>& left, _Ty2* right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator<=(const WeakRef<T1>& left, T2* right) noexcept
 {
     return left.Raw() <= right;
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator<=(_Ty1* left, const WeakRef<_Ty2>& right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator<=(T1* left, const WeakRef<T2>& right) noexcept
 {
     return left <= right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty>
-bool operator<=(const WeakRef<_Ty>& left, std::nullptr_t) noexcept
+ILM_EXPORT template <typename T>
+bool operator<=(const WeakRef<T>& left, std::nullptr_t) noexcept
 {
-    return left.Raw() <= static_cast<_Ty*>(nullptr);
+    return left.Raw() <= static_cast<T*>(nullptr);
 }
 
-ILM_EXPORT template <typename _Ty>
-bool operator<=(std::nullptr_t, const WeakRef<_Ty>& right) noexcept
+ILM_EXPORT template <typename T>
+bool operator<=(std::nullptr_t, const WeakRef<T>& right) noexcept
 {
-    return static_cast<_Ty*>(nullptr) <= right.Raw();
+    return static_cast<T*>(nullptr) <= right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator>(const WeakRef<_Ty1>& left, const WeakRef<_Ty2>& right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator>(const WeakRef<T1>& left, const WeakRef<T2>& right) noexcept
 {
     return left.Raw() > right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator>(const WeakRef<_Ty1>& left, _Ty2* right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator>(const WeakRef<T1>& left, T2* right) noexcept
 {
     return left.Raw() > right;
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator>(_Ty1* left, const WeakRef<_Ty2>& right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator>(T1* left, const WeakRef<T2>& right) noexcept
 {
     return left > right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty>
-bool operator>(const WeakRef<_Ty>& left, std::nullptr_t) noexcept
+ILM_EXPORT template <typename T>
+bool operator>(const WeakRef<T>& left, std::nullptr_t) noexcept
 {
-    return left.Raw() > static_cast<_Ty*>(nullptr);
+    return left.Raw() > static_cast<T*>(nullptr);
 }
 
-ILM_EXPORT template <typename _Ty>
-bool operator>(std::nullptr_t, const WeakRef<_Ty>& right) noexcept
+ILM_EXPORT template <typename T>
+bool operator>(std::nullptr_t, const WeakRef<T>& right) noexcept
 {
-    return static_cast<_Ty*>(nullptr) > right.Raw();
+    return static_cast<T*>(nullptr) > right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator>=(const WeakRef<_Ty1>& left, const WeakRef<_Ty2>& right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator>=(const WeakRef<T1>& left, const WeakRef<T2>& right) noexcept
 {
     return left.Raw() >= right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator>=(const WeakRef<_Ty1>& left, _Ty2* right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator>=(const WeakRef<T1>& left, T2* right) noexcept
 {
     return left.Raw() >= right;
 }
 
-ILM_EXPORT template <typename _Ty1, typename _Ty2>
-bool operator>=(_Ty1* left, const WeakRef<_Ty2>& right) noexcept
+ILM_EXPORT template <typename T1, typename T2>
+bool operator>=(T1* left, const WeakRef<T2>& right) noexcept
 {
     return left >= right.Raw();
 }
 
-ILM_EXPORT template <typename _Ty>
-bool operator>=(const WeakRef<_Ty>& left, std::nullptr_t) noexcept
+ILM_EXPORT template <typename T>
+bool operator>=(const WeakRef<T>& left, std::nullptr_t) noexcept
 {
-    return left.Raw() >= static_cast<_Ty*>(nullptr);
+    return left.Raw() >= static_cast<T*>(nullptr);
 }
 
-ILM_EXPORT template <typename _Ty>
-bool operator>=(std::nullptr_t, const WeakRef<_Ty>& right) noexcept
+ILM_EXPORT template <typename T>
+bool operator>=(std::nullptr_t, const WeakRef<T>& right) noexcept
 {
-    return static_cast<_Ty*>(nullptr) >= right.Raw();
+    return static_cast<T*>(nullptr) >= right.Raw();
 }
 
 ILM_NAMESPACE_END // namespace ilm
@@ -1210,21 +1212,21 @@ namespace std
     template <class _Kty>
     struct hash;
 
-    ILM_EXPORT template <typename _Ty>
-    struct hash<_ILM Scope<_Ty>>
+    ILM_EXPORT template <typename T>
+    struct hash<_ILM Scope<T>>
     {
-        size_t operator()(const _ILM Scope<_Ty>& ptr) const noexcept { return hash<_Ty*>{}(ptr.Raw()); }
+        size_t operator()(const _ILM Scope<T>& ptr) const noexcept { return hash<T*>{}(ptr.Raw()); }
     };
 
-    ILM_EXPORT template <typename _Ty>
-    struct hash<_ILM Ref<_Ty>>
+    ILM_EXPORT template <typename T>
+    struct hash<_ILM Ref<T>>
     {
-        size_t operator()(const _ILM Ref<_Ty>& ptr) const noexcept { return hash<_Ty*>{}(ptr.Raw()); }
+        size_t operator()(const _ILM Ref<T>& ptr) const noexcept { return hash<T*>{}(ptr.Raw()); }
     };
 
-    ILM_EXPORT template <typename _Ty>
-    struct hash<_ILM WeakRef<_Ty>>
+    ILM_EXPORT template <typename T>
+    struct hash<_ILM WeakRef<T>>
     {
-        size_t operator()(const _ILM WeakRef<_Ty>& ptr) const noexcept { return hash<_Ty*>{}(ptr.Raw()); }
+        size_t operator()(const _ILM WeakRef<T>& ptr) const noexcept { return hash<T*>{}(ptr.Raw()); }
     };
 }  // namespace std

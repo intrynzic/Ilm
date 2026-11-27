@@ -1,0 +1,14 @@
+{
+  "timestamp_utc": "2026-11-26T09:07:47Z",
+  "compiler": "msvc 195136260",
+  "cplusplus": 199711,
+  "ndebug": true,
+  "os": "windows",
+  "pointer_bits": 64,
+  "hardware_threads": 6,
+  "single_thread_fast_path_allowed": false,
+  "repeats": 15,
+  "min_time_ms": 20,
+  "thread_counts": [1, 2, 4, 6, 8],
+  "sizeof": { "ilm_ref": 24, "std_shared_ptr": 16 }
+}

@@ -17,5 +17,6 @@ INT_DIR = "%{wks.location}/bin/intermediate/%{cfg.system}/%{cfg.architecture}/%{
 -- This path is relative to the premake scripts for each Example/Test, not relative to this premake script
 ILM_HPP_INCLUDE = "../../Ilm/src/include"
 
+include "Benchmarks"
 include "Examples"
 include "Tests"

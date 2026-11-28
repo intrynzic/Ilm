@@ -796,9 +796,7 @@ namespace ilm
 
         constexpr T* Raw() const noexcept { return this->GetRaw(); }
 
-        constexpr bool Valid() const noexcept { return Raw() != nullptr; }
-
-        constexpr explicit operator bool() const noexcept { return Valid(); }
+        constexpr explicit operator bool() const noexcept { return Expired(); }
 
         WeakRef<T>& operator=(const WeakRef<T>& other) noexcept
         {

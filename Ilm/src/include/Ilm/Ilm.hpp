@@ -143,7 +143,7 @@ namespace ilm
         protected:
             constexpr T* GetRaw() const noexcept { return m_Ptr; }
 
-            constexpr T* ReleaseImpl() noexcept { return std::exchange(m_Ptr, nullptr); }
+            [[nodiscard]] constexpr T* ReleaseImpl() noexcept { return std::exchange(m_Ptr, nullptr); }
 
             constexpr void SwapImpl(RefBase<T>& other) noexcept
             {
@@ -365,7 +365,11 @@ namespace ilm
 
         constexpr void Reset() noexcept { Scope<T>(nullptr).Swap(*this); }
 
-        constexpr T* Release() noexcept { return std::exchange(m_Ptr, nullptr); }
+        [[nodiscard("Discarding a released resource leaks the resource!")]]
+        constexpr T* Release() noexcept
+        {
+            return std::exchange(m_Ptr, nullptr);
+        }
 
         constexpr T* Raw() const noexcept { return m_Ptr; }
 
@@ -424,13 +428,14 @@ namespace ilm
     };
 
     ILM_EXPORT template <detail::NonArray T, typename... Args>
+    [[nodiscard("Discarding a Scope leaks the resource!")]]
     constexpr Scope<T> CreateScope(Args&&... args) noexcept
     {
         return Scope<T>(new T(std::forward<Args>(args)...));
     }
 
     ILM_EXPORT template <typename Wanted, typename T>
-    Wanted* GetScopeBaseTypePtr(const Scope<T>& scope) noexcept
+    [[nodiscard]] Wanted* GetScopeBaseTypePtr(const Scope<T>& scope) noexcept
     {
         return static_cast<Wanted*>(scope.Raw());
     }
@@ -511,6 +516,7 @@ namespace ilm
 
         constexpr void Reset() noexcept { Ref<T>(nullptr).Swap(*this); }
 
+        [[nodiscard("Discarding a released resource leaks the resource!")]]
         constexpr T* Release() noexcept
         {
             T* res = this->ReleaseImpl();
@@ -579,13 +585,14 @@ namespace ilm
     };
 
     ILM_EXPORT template <detail::NonArray T, typename... Args>
+    [[nodiscard("Discarding a Ref leaks the resource!")]]
     constexpr Ref<T> CreateRef(Args&&... args) noexcept
     {
         return Ref<T>(new T(std::forward<Args>(args)...));
     }
 
     ILM_EXPORT template <typename Wanted, typename T>
-    Wanted* GetRefBaseTypePtr(const Ref<T>& ref) noexcept
+    [[nodiscard]] Wanted* GetRefBaseTypePtr(const Ref<T>& ref) noexcept
     {
         return static_cast<Wanted*>(ref.Raw());
     }
@@ -652,8 +659,8 @@ namespace ilm
         }
 
         // NOTE: To prevent accidental usages, we intentionally deleted the Ref assignment operator overloads.
-        constexpr UnsafeRef<T>& operator=(const Ref<T>&) noexcept = delete;
-        constexpr UnsafeRef<T>& operator=(Ref<T>&&) noexcept      = delete;
+        constexpr UnsafeRef<T>& operator=(const Ref<T>&) = delete;
+        constexpr UnsafeRef<T>& operator=(Ref<T>&&)      = delete;
 
     private:
         template <typename T2>
@@ -662,14 +669,14 @@ namespace ilm
 
     // Unsafe cast and copy
     ILM_EXPORT template <typename T>
-    UnsafeRef<T> UnsafeRefCast(const Ref<T>& ref) noexcept
+    [[nodiscard]] UnsafeRef<T> UnsafeRefCast(const Ref<T>& ref) noexcept
     {
         return UnsafeRef<T>(ref);
     }
 
     // Static cast and copy
     ILM_EXPORT template <typename Wanted, typename T>
-    Ref<Wanted> StaticRefCast(const Ref<T>& ref) noexcept
+    [[nodiscard]] Ref<Wanted> StaticRefCast(const Ref<T>& ref) noexcept
     {
         const auto ptr = static_cast<Wanted*>(ref.Raw());
         return Ref<Wanted>(ptr, ref);
@@ -677,7 +684,7 @@ namespace ilm
 
     // Static cast and move
     ILM_EXPORT template <typename Wanted, typename T>
-    Ref<Wanted> StaticRefCast(Ref<T>&& ref) noexcept
+    [[nodiscard]] Ref<Wanted> StaticRefCast(Ref<T>&& ref) noexcept
     {
         const auto ptr = static_cast<Wanted*>(ref.Raw());
         return Ref<Wanted>(ptr, std::move(ref));
@@ -685,7 +692,7 @@ namespace ilm
 
     // Dynamic cast and copy
     ILM_EXPORT template <typename Wanted, typename T>
-    Ref<Wanted> DynamicRefCast(const Ref<T>& ref) noexcept
+    [[nodiscard]] Ref<Wanted> DynamicRefCast(const Ref<T>& ref) noexcept
     {
         const auto ptr = dynamic_cast<Wanted*>(ref.Raw());
         return Ref<Wanted>(ptr, ref);
@@ -693,7 +700,7 @@ namespace ilm
 
     // Dynamic cast and move
     ILM_EXPORT template <typename Wanted, typename T>
-    Ref<Wanted> DynamicRefCast(Ref<T>&& ref) noexcept
+    [[nodiscard]] Ref<Wanted> DynamicRefCast(Ref<T>&& ref) noexcept
     {
         const auto ptr = dynamic_cast<Wanted*>(ref.Raw());
         return Ref<Wanted>(ptr, std::move(ref));
@@ -701,7 +708,7 @@ namespace ilm
 
     // Reinterpret cast and copy
     ILM_EXPORT template <typename Wanted, typename T>
-    Ref<Wanted> ReinterpretRefCast(const Ref<T>& ref) noexcept
+    [[nodiscard]] Ref<Wanted> ReinterpretRefCast(const Ref<T>& ref) noexcept
     {
         const auto ptr = reinterpret_cast<Wanted*>(ref.Raw());
         return Ref<Wanted>(ptr, ref);
@@ -709,7 +716,7 @@ namespace ilm
 
     // Reinterpret cast and move
     ILM_EXPORT template <typename Wanted, typename T>
-    Ref<Wanted> ReinterpretRefCast(Ref<T>&& ref) noexcept
+    [[nodiscard]] Ref<Wanted> ReinterpretRefCast(Ref<T>&& ref) noexcept
     {
         const auto ptr = reinterpret_cast<Wanted*>(ref.Raw());
         return Ref<Wanted>(ptr, std::move(ref));
@@ -717,7 +724,7 @@ namespace ilm
 
     // Const cast and copy
     ILM_EXPORT template <typename Wanted, typename T>
-    Ref<Wanted> ConstRefCast(const Ref<T>& ref) noexcept
+    [[nodiscard]] Ref<Wanted> ConstRefCast(const Ref<T>& ref) noexcept
     {
         const auto ptr = const_cast<Wanted*>(ref.Raw());
         return Ref<Wanted>(ptr, ref);
@@ -725,7 +732,7 @@ namespace ilm
 
     // Const cast and move
     ILM_EXPORT template <typename Wanted, typename T>
-    Ref<Wanted> ConstRefCast(Ref<T>&& ref) noexcept
+    [[nodiscard]] Ref<Wanted> ConstRefCast(Ref<T>&& ref) noexcept
     {
         const auto ptr = const_cast<Wanted*>(ref.Raw());
         return Ref<Wanted>(ptr, std::move(ref));
@@ -785,11 +792,11 @@ namespace ilm
 
         bool Expired() const noexcept { return RefCount() == 0; }
 
+        [[nodiscard]] Ref<T> Lock() const noexcept { return Expired() ? nullptr : Ref<T>(*this); }
+
         constexpr T* Raw() const noexcept { return this->GetRaw(); }
 
         constexpr bool Valid() const noexcept { return Raw() != nullptr; }
-
-        Ref<T> Lock() const noexcept { return Expired() ? nullptr : Ref<T>(*this); }
 
         constexpr explicit operator bool() const noexcept { return Valid(); }
 
@@ -863,42 +870,42 @@ namespace ilm
 
     // Ref/WeakRef <-> Ref/WeakRef
     ILM_EXPORT template <detail::RefLike Lhs, detail::RefLike Rhs>
-    constexpr bool operator==(const Lhs& left, const Rhs& right) noexcept
+    [[nodiscard]] constexpr bool operator==(const Lhs& left, const Rhs& right) noexcept
     {
         return left.Raw() == right.Raw();
     }
 
     // Ref/WeakRef <=> Ref/WeakRef
     ILM_EXPORT template <detail::RefLike Lhs, detail::RefLike Rhs>
-    constexpr std::strong_ordering operator<=>(const Lhs& left, const Rhs& right) noexcept
+    [[nodiscard]] constexpr std::strong_ordering operator<=>(const Lhs& left, const Rhs& right) noexcept
     {
         return std::compare_three_way{}(left.Raw(), right.Raw());
     }
 
     // Ref/WeakRef <-> Raw pointer
     ILM_EXPORT template <detail::RefLike Lhs, typename T>
-    constexpr bool operator==(const Lhs& left, T* right) noexcept
+    [[nodiscard]] constexpr bool operator==(const Lhs& left, T* right) noexcept
     {
         return left.Raw() == right;
     }
 
     // Ref/WeakRef <=> Raw pointer
     ILM_EXPORT template <detail::RefLike Lhs, typename T>
-    constexpr std::strong_ordering operator<=>(const Lhs& left, T* right) noexcept
+    [[nodiscard]] constexpr std::strong_ordering operator<=>(const Lhs& left, T* right) noexcept
     {
         return std::compare_three_way{}(left.Raw(), right);
     }
 
     // Ref/WeakRef <-> nullptr
     ILM_EXPORT template <detail::RefLike Lhs>
-    constexpr bool operator==(const Lhs& left, std::nullptr_t) noexcept
+    [[nodiscard]] constexpr bool operator==(const Lhs& left, std::nullptr_t) noexcept
     {
         return left.Raw() == nullptr;
     }
 
     // Ref/WeakRef <=> nullptr
     ILM_EXPORT template <detail::RefLike Lhs>
-    constexpr std::strong_ordering operator<=>(const Lhs& left, std::nullptr_t) noexcept
+    [[nodiscard]] constexpr std::strong_ordering operator<=>(const Lhs& left, std::nullptr_t) noexcept
     {
         return std::compare_three_way{}(left.Raw(), static_cast<decltype(left.Raw())>(nullptr));
     }

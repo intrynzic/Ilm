@@ -156,13 +156,13 @@ namespace ilm
 
             uint32_t WeakRefCountImpl() const noexcept { return m_RefCount ? m_RefCount->GetWeaks() : 0; }
 
-            void IncRef() noexcept
+            void IncRefImpl() noexcept
             {
                 if (m_RefCount)
                     (void)m_RefCount->IncRef();
             }
 
-            void DecRef() noexcept
+            void DecRefImpl() noexcept
             {
                 if (m_RefCount && (m_RefCount->DecRef() == 0))
                 {
@@ -182,13 +182,13 @@ namespace ilm
                 }
             }
 
-            void IncWeakRef() noexcept
+            void IncWeakRefImpl() noexcept
             {
                 if (m_RefCount)
                     (void)m_RefCount->IncWeakRef();
             }
 
-            void DecWeakRef() noexcept
+            void DecWeakRefImpl() noexcept
             {
                 if (m_RefCount && (m_RefCount->DecWeakRef() == 0) && (RefCountImpl() == 0))
                 {
@@ -214,7 +214,7 @@ namespace ilm
 
                 // Guard against incrementing if we alias-constructed from an empty ref
                 if (m_RefCount)
-                    IncRef();
+                    IncRefImpl();
             }
 
             template <typename T2, typename T3>
@@ -248,7 +248,7 @@ namespace ilm
                 m_RefCount = ref.m_RefCount;
                 m_Deleter  = ref.m_Deleter;
 
-                IncRef();
+                IncRefImpl();
             }
 
             template <typename T2>
@@ -258,7 +258,7 @@ namespace ilm
                 m_RefCount = ptr.m_RefCount;
                 m_Deleter  = ptr.m_Deleter;
 
-                IncWeakRef();
+                IncWeakRefImpl();
             }
 
             template <typename T2>
@@ -277,7 +277,7 @@ namespace ilm
                 m_RefCount = weak.m_RefCount;
                 m_Deleter  = weak.m_Deleter;
 
-                IncRef();
+                IncRefImpl();
             }
 
             template <typename T2>
@@ -498,7 +498,7 @@ namespace ilm
             : detail::RefBase<T>(nullptr) { };
 
         constexpr Ref() = default;
-        constexpr ~Ref() noexcept { this->DecRef(); }
+        constexpr ~Ref() noexcept { this->DecRefImpl(); }
 
         constexpr void Swap(Ref<T>& other) noexcept
         {
@@ -638,11 +638,11 @@ namespace ilm
                 this->SwapImpl(other);
         }
 
-        void IncRef() noexcept { this->IncRef(); }
-        void DecRef() noexcept { this->DecRef(); }
+        void IncRef() noexcept { this->IncRefImpl(); }
+        void DecRef() noexcept { this->DecRefImpl(); }
 
-        void IncWeakRef() noexcept { this->IncWeakRef(); }
-        void DecWeakRef() noexcept { this->DecWeakRef(); }
+        void IncWeakRef() noexcept { this->IncWeakRefImpl(); }
+        void DecWeakRef() noexcept { this->DecWeakRefImpl(); }
 
         uint32_t RefCount() const noexcept { return this->RefCountImpl(); }
 
@@ -776,7 +776,7 @@ namespace ilm
             : detail::RefBase<T>(nullptr) { };
 
         constexpr WeakRef() = default;
-        constexpr ~WeakRef() noexcept { this->DecWeakRef(); }
+        constexpr ~WeakRef() noexcept { this->DecWeakRefImpl(); }
 
         constexpr void Swap(WeakRef<T>& other) noexcept
         {

@@ -358,7 +358,7 @@ namespace ilm
         template <detail::DerivedFrom<T> T2>
         constexpr void Reset(T2* newPtr) noexcept
         {
-            Scope<T2>(newPtr).Swap(*this);
+            Scope<T>(static_cast<T*>(newPtr)).Swap(*this);
         }
 
         constexpr void Reset(T* newPtr) noexcept { Scope<T>(newPtr).Swap(*this); }

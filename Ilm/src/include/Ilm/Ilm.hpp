@@ -27,6 +27,7 @@ import std;
 #else
 #    define ILM_EXPORT
 #    include <atomic>
+#    include <compare>
 #    include <concepts>
 #    include <cstdint>
 #    include <functional>
@@ -71,6 +72,30 @@ namespace ilm
         // Usage: template<detail::AddsConst<T> T2> means T must be const T2
         template <typename T2, typename Base>
         concept AddsConst = !std::is_const_v<T2> && std::same_as<std::add_const_t<T2>, Base>;
+
+        // Base case template for checking if a type is an instantiation of Ref/WeakRef.
+        template <typename T>
+        constexpr bool IsRefLike = false;
+
+        // Ref<T> is an instantiation of Ref.
+        template <typename T>
+        constexpr bool IsRefLike<Ref<T>> = true;
+
+        // WeakRef<T> is an instantiation of WeakRef which is RefLike.
+        template <typename T>
+        constexpr bool IsRefLike<WeakRef<T>> = true;
+
+        // NOTE(Adam): We don't specialize this for UnsafeRef or provide comparison
+        //             operator overloads as they should never be required!
+        //             UnsafeRef should be hard and unappealing to use.
+
+        // UnsafeRef<T> is an instantiation of UnsafeRef which is RefLike.
+        // template <typename T>
+        // constexpr inline bool IsRefLike<UnsafeRef<T>> = true;
+
+        // T is wrapped into an instantiation of Ref, WeakRef or UnsafeRef.
+        template <typename T>
+        concept RefLike = IsRefLike<T>;
 
         // The control block that stores the atomic reference count.
         class AtomicRefCount
@@ -177,7 +202,7 @@ namespace ilm
             {
                 m_Ptr      = static_cast<T*>(ptr);
                 m_RefCount = m_Ptr ? new AtomicRefCount() : nullptr;
-                m_Deleter  = m_Ptr ? &_DefaultDelete<T2> : nullptr;
+                m_Deleter  = m_Ptr ? &DefaultDelete<T2> : nullptr;
             }
 
             template <typename T2, typename T3>
@@ -265,7 +290,7 @@ namespace ilm
 
         private:
             template <typename T2>
-            static void _DefaultDelete(void* ptr) noexcept
+            static void DefaultDelete(void* ptr) noexcept
             {
                 delete static_cast<T2*>(ptr);
             }
@@ -289,11 +314,11 @@ namespace ilm
     {
     public:
         constexpr explicit Scope(T* ptr) noexcept
-            : m_Ptr(ptr), m_Deleter(&_DefaultDelete<T>) { };
+            : m_Ptr(ptr), m_Deleter(&DefaultDelete<T>) { };
 
         template <detail::DerivedFrom<T> T2>
         constexpr explicit Scope(T2* ptr) noexcept
-            : m_Ptr(ptr), m_Deleter(&_DefaultDelete<T2>) { };
+            : m_Ptr(ptr), m_Deleter(&DefaultDelete<T2>) { };
 
         template <detail::DerivedFrom<T> T2>
         constexpr Scope(Scope<T2>&& scope) noexcept
@@ -384,7 +409,7 @@ namespace ilm
 
     private:
         template <typename T2>
-        static void _DefaultDelete(void* ptr) noexcept
+        static void DefaultDelete(void* ptr) noexcept
         {
             delete static_cast<T2*>(ptr);
         }
@@ -836,366 +861,47 @@ namespace ilm
         return ostream << ptr.Raw();
     }
 
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator==(const Ref<T1>& left, const Ref<T2>& right) noexcept
+    // Ref/WeakRef <-> Ref/WeakRef
+    ILM_EXPORT template <detail::RefLike Lhs, detail::RefLike Rhs>
+    constexpr bool operator==(const Lhs& left, const Rhs& right) noexcept
     {
         return left.Raw() == right.Raw();
     }
 
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator==(const Ref<T1>& left, T2* right) noexcept
+    // Ref/WeakRef <=> Ref/WeakRef
+    ILM_EXPORT template <detail::RefLike Lhs, detail::RefLike Rhs>
+    constexpr std::strong_ordering operator<=>(const Lhs& left, const Rhs& right) noexcept
+    {
+        return std::compare_three_way{}(left.Raw(), right.Raw());
+    }
+
+    // Ref/WeakRef <-> Raw pointer
+    ILM_EXPORT template <detail::RefLike Lhs, typename T>
+    constexpr bool operator==(const Lhs& left, T* right) noexcept
     {
         return left.Raw() == right;
     }
 
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator==(T1* left, const Ref<T2> right) noexcept
+    // Ref/WeakRef <=> Raw pointer
+    ILM_EXPORT template <detail::RefLike Lhs, typename T>
+    constexpr std::strong_ordering operator<=>(const Lhs& left, T* right) noexcept
     {
-        return left == right.Raw();
+        return std::compare_three_way{}(left.Raw(), right);
     }
 
-    ILM_EXPORT template <typename T>
-    bool operator==(const Ref<T>& left, std::nullptr_t) noexcept
-    {
-        return left.Raw() == nullptr;
-    }
-
-    ILM_EXPORT template <typename T>
-    bool operator==(std::nullptr_t, const Ref<T>& right) noexcept
-    {
-        return nullptr == right.Raw();
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator!=(const Ref<T1>& left, const Ref<T2>& right) noexcept
-    {
-        return left.Raw() != right.Raw();
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator!=(const Ref<T1>& left, T2* right) noexcept
-    {
-        return left.Raw() != right;
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator!=(T1* left, const Ref<T2>& right) noexcept
-    {
-        return left != right.Raw();
-    }
-
-    ILM_EXPORT template <typename T>
-    bool operator!=(const Ref<T>& left, std::nullptr_t) noexcept
-    {
-        return left.Raw() != nullptr;
-    }
-
-    ILM_EXPORT template <typename T>
-    bool operator!=(std::nullptr_t, const Ref<T>& right) noexcept
-    {
-        return nullptr != right.Raw();
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator<(const Ref<T1>& left, const Ref<T2>& right) noexcept
-    {
-        return left.Raw() < right.Raw();
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator<(const Ref<T1>& left, T2* right) noexcept
-    {
-        return left.Raw() < right;
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator<(T1* left, const Ref<T2>& right) noexcept
-    {
-        return left < right.Raw();
-    }
-
-    ILM_EXPORT template <typename T>
-    bool operator<(const Ref<T>& left, std::nullptr_t) noexcept
-    {
-        return left.Raw() < static_cast<T*>(nullptr);
-    }
-
-    ILM_EXPORT template <typename T>
-    bool operator<(std::nullptr_t, const Ref<T>& right) noexcept
-    {
-        return static_cast<T*>(nullptr) < right.Raw();
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator<=(const Ref<T1>& left, const Ref<T2>& right) noexcept
-    {
-        return left.Raw() <= right.Raw();
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator<=(const Ref<T1>& left, T2* right) noexcept
-    {
-        return left.Raw() <= right;
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator<=(T1* left, const Ref<T2>& right) noexcept
-    {
-        return left <= right.Raw();
-    }
-
-    ILM_EXPORT template <typename T>
-    bool operator<=(const Ref<T>& left, std::nullptr_t) noexcept
-    {
-        return left.Raw() <= static_cast<T*>(nullptr);
-    }
-
-    ILM_EXPORT template <typename T>
-    bool operator<=(std::nullptr_t, const Ref<T>& right) noexcept
-    {
-        return static_cast<T*>(nullptr) <= right.Raw();
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator>(const Ref<T1>& left, const Ref<T2>& right) noexcept
-    {
-        return left.Raw() > right.Raw();
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator>(const Ref<T1>& left, T2* right) noexcept
-    {
-        return left.Raw() > right;
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator>(T1* left, const Ref<T2>& right) noexcept
-    {
-        return left > right.Raw();
-    }
-
-    ILM_EXPORT template <typename T>
-    bool operator>(const Ref<T>& left, std::nullptr_t) noexcept
-    {
-        return left.Raw() > static_cast<T*>(nullptr);
-    }
-
-    ILM_EXPORT template <typename T>
-    bool operator>(std::nullptr_t, const Ref<T>& right) noexcept
-    {
-        return static_cast<T*>(nullptr) > right.Raw();
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator>=(const Ref<T1>& left, const Ref<T2>& right) noexcept
-    {
-        return left.Raw() >= right.Raw();
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator>=(const Ref<T1>& left, T2* right) noexcept
-    {
-        return left.Raw() >= right;
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator>=(T1* left, const Ref<T2>& right) noexcept
-    {
-        return left >= right.Raw();
-    }
-
-    ILM_EXPORT template <typename T>
-    bool operator>=(const Ref<T>& left, std::nullptr_t) noexcept
-    {
-        return left.Raw() >= static_cast<T*>(nullptr);
-    }
-
-    ILM_EXPORT template <typename T>
-    bool operator>=(std::nullptr_t, const Ref<T>& right) noexcept
-    {
-        return static_cast<T*>(nullptr) >= right.Raw();
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator==(const WeakRef<T1>& left, const WeakRef<T2>& right) noexcept
-    {
-        return left.Raw() == right.Raw();
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator==(const WeakRef<T1>& left, T2* right) noexcept
-    {
-        return left.Raw() == right;
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator==(T1* left, const WeakRef<T2> right) noexcept
-    {
-        return left == right.Raw();
-    }
-
-    ILM_EXPORT template <typename T>
-    bool operator==(const WeakRef<T>& left, std::nullptr_t) noexcept
+    // Ref/WeakRef <-> nullptr
+    ILM_EXPORT template <detail::RefLike Lhs>
+    constexpr bool operator==(const Lhs& left, std::nullptr_t) noexcept
     {
         return left.Raw() == nullptr;
     }
 
-    ILM_EXPORT template <typename T>
-    bool operator==(std::nullptr_t, const WeakRef<T>& right) noexcept
+    // Ref/WeakRef <=> nullptr
+    ILM_EXPORT template <detail::RefLike Lhs>
+    constexpr std::strong_ordering operator<=>(const Lhs& left, std::nullptr_t) noexcept
     {
-        return nullptr == right.Raw();
+        return std::compare_three_way{}(left.Raw(), static_cast<decltype(left.Raw())>(nullptr));
     }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator!=(const WeakRef<T1>& left, const WeakRef<T2>& right) noexcept
-    {
-        return left.Raw() != right.Raw();
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator!=(const WeakRef<T1>& left, T2* right) noexcept
-    {
-        return left.Raw() != right;
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator!=(T1* left, const WeakRef<T2>& right) noexcept
-    {
-        return left != right.Raw();
-    }
-
-    ILM_EXPORT template <typename T>
-    bool operator!=(const WeakRef<T>& left, std::nullptr_t) noexcept
-    {
-        return left.Raw() != nullptr;
-    }
-
-    ILM_EXPORT template <typename T>
-    bool operator!=(std::nullptr_t, const WeakRef<T>& right) noexcept
-    {
-        return nullptr != right.Raw();
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator<(const Ref<T1>& left, const WeakRef<T2>& right) noexcept
-    {
-        return left.Raw() < right.Raw();
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator<(const WeakRef<T1>& left, T2* right) noexcept
-    {
-        return left.Raw() < right;
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator<(T1* left, const WeakRef<T2>& right) noexcept
-    {
-        return left < right.Raw();
-    }
-
-    ILM_EXPORT template <typename T>
-    bool operator<(const WeakRef<T>& left, std::nullptr_t) noexcept
-    {
-        return left.Raw() < static_cast<T*>(nullptr);
-    }
-
-    ILM_EXPORT template <typename T>
-    bool operator<(std::nullptr_t, const WeakRef<T>& right) noexcept
-    {
-        return static_cast<T*>(nullptr) < right.Raw();
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator<=(const WeakRef<T1>& left, const WeakRef<T2>& right) noexcept
-    {
-        return left.Raw() <= right.Raw();
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator<=(const WeakRef<T1>& left, T2* right) noexcept
-    {
-        return left.Raw() <= right;
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator<=(T1* left, const WeakRef<T2>& right) noexcept
-    {
-        return left <= right.Raw();
-    }
-
-    ILM_EXPORT template <typename T>
-    bool operator<=(const WeakRef<T>& left, std::nullptr_t) noexcept
-    {
-        return left.Raw() <= static_cast<T*>(nullptr);
-    }
-
-    ILM_EXPORT template <typename T>
-    bool operator<=(std::nullptr_t, const WeakRef<T>& right) noexcept
-    {
-        return static_cast<T*>(nullptr) <= right.Raw();
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator>(const WeakRef<T1>& left, const WeakRef<T2>& right) noexcept
-    {
-        return left.Raw() > right.Raw();
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator>(const WeakRef<T1>& left, T2* right) noexcept
-    {
-        return left.Raw() > right;
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator>(T1* left, const WeakRef<T2>& right) noexcept
-    {
-        return left > right.Raw();
-    }
-
-    ILM_EXPORT template <typename T>
-    bool operator>(const WeakRef<T>& left, std::nullptr_t) noexcept
-    {
-        return left.Raw() > static_cast<T*>(nullptr);
-    }
-
-    ILM_EXPORT template <typename T>
-    bool operator>(std::nullptr_t, const WeakRef<T>& right) noexcept
-    {
-        return static_cast<T*>(nullptr) > right.Raw();
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator>=(const WeakRef<T1>& left, const WeakRef<T2>& right) noexcept
-    {
-        return left.Raw() >= right.Raw();
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator>=(const WeakRef<T1>& left, T2* right) noexcept
-    {
-        return left.Raw() >= right;
-    }
-
-    ILM_EXPORT template <typename T1, typename T2>
-    bool operator>=(T1* left, const WeakRef<T2>& right) noexcept
-    {
-        return left >= right.Raw();
-    }
-
-    ILM_EXPORT template <typename T>
-    bool operator>=(const WeakRef<T>& left, std::nullptr_t) noexcept
-    {
-        return left.Raw() >= static_cast<T*>(nullptr);
-    }
-
-    ILM_EXPORT template <typename T>
-    bool operator>=(std::nullptr_t, const WeakRef<T>& right) noexcept
-    {
-        return static_cast<T*>(nullptr) >= right.Raw();
-    }
-
 }  // namespace ilm
 
 namespace std

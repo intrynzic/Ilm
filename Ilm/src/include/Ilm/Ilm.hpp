@@ -198,7 +198,7 @@ namespace ilm
             }
 
             template <typename T2>
-            void ConstructFromRaw(T2* ptr) noexcept
+            void ConstructFromRaw(T2* ptr)
             {
                 m_Ptr      = static_cast<T*>(ptr);
                 m_RefCount = m_Ptr ? new AtomicRefCount() : nullptr;
@@ -429,7 +429,7 @@ namespace ilm
 
     ILM_EXPORT template <detail::NonArray T, typename... Args>
     [[nodiscard("Discarding a Scope leaks the resource!")]]
-    Scope<T> CreateScope(Args&&... args) noexcept
+    Scope<T> CreateScope(Args&&... args)
     {
         return Scope<T>(new T(std::forward<Args>(args)...));
     }
@@ -444,10 +444,10 @@ namespace ilm
     class Ref : public detail::RefBase<T>
     {
     public:
-        explicit Ref(T* ptr) noexcept { this->ConstructFromRaw(ptr); }
+        explicit Ref(T* ptr) { this->ConstructFromRaw(ptr); }
 
         template <detail::DerivedFrom<T> T2>
-        explicit Ref(T2* ptr) noexcept
+        explicit Ref(T2* ptr)
         {
             this->ConstructFromRaw(ptr);
         }
@@ -586,7 +586,7 @@ namespace ilm
 
     ILM_EXPORT template <detail::NonArray T, typename... Args>
     [[nodiscard("Discarding a Ref leaks the resource!")]]
-    Ref<T> CreateRef(Args&&... args) noexcept
+    Ref<T> CreateRef(Args&&... args)
     {
         return Ref<T>(new T(std::forward<Args>(args)...));
     }

@@ -1,18 +1,15 @@
 include "Tools/Premake/customization/solutionitems.lua"
 
-local function pickCppVersion(targetVersion)
-    if os.target() == "windows" then
-        return "C++" .. targetVersion
-    elseif os.target() == "linux" then
-        return "gnu++" .. targetVersion
-    end
+local function PickCppVersion(targetVersion)
+    if os.target() == "windows" then return "C++" .. targetVersion end
+    if os.target() == "linux" then return "gnu++" .. targetVersion end
 
     return "Default"
 end
 
-local cppTargetVer = "23"
-CPP_VER = pickCppVersion(cppTargetVer)
-print("C++ version: ISO " .. CPP_VER .. ".\n")
+-- C++26
+CPP_VER = PickCppVersion("latest")
+print("C++ Standard: " .. CPP_VER .. ".\n")
 
 OUT_DIR = "%{wks.location}/bin/build/%{cfg.system}/%{cfg.architecture}/%{cfg.buildcfg}"
 INT_DIR = "%{wks.location}/bin/intermediate/%{cfg.system}/%{cfg.architecture}/%{cfg.buildcfg}/%{prj.name}"

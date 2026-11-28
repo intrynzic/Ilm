@@ -6,13 +6,12 @@ using namespace ilm;
 class MemLeakTest
 {
 public:
-    constexpr MemLeakTest(size_t idx) noexcept : m_Index(idx) { };
+    constexpr MemLeakTest(size_t idx) noexcept
+        : m_Index(idx) { };
+
     constexpr MemLeakTest() noexcept = default;
 
-    ~MemLeakTest() noexcept
-    {
-        std::cout << "Destructing... #" << m_Index << '\n';
-    }
+    ~MemLeakTest() noexcept { std::cout << "Destructing... #" << m_Index << '\n'; }
 
     constexpr size_t GetIndex() const noexcept { return m_Index; }
 
